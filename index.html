@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#09090b">
 
-    <!-- ספריות חיצוניות (Tailwind, Lucide, Three.js) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- מנוע התלת-ממד למשחק -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;800;900&display=swap" rel="stylesheet">
 
@@ -39,7 +39,7 @@
         .banner-skin_gold { background: linear-gradient(45deg, #78350f, #ca8a04, #fef08a, #ca8a04, #78350f); border: 2px solid #facc15; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
         .banner-bundle_progamer { background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000') center/cover; border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
 
-        /* --- אנימציית הטעינה של שלט הגיימינג --- */
+        /* אנימציית הטעינה */
         .loader-bg { background-color: #050505; }
         .gamepad-svg { width: 160px; height: 160px; }
         .gamepad-path { fill: transparent; stroke: #22c55e; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawOutline 2.5s ease-in-out forwards; filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.6)); }
@@ -49,9 +49,12 @@
         .progress-bar-container { width: 220px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-top: 30px; }
         .progress-bar-fill { height: 100%; background: #22c55e; width: 0%; animation: fillBar 2.5s ease-in-out forwards; box-shadow: 0 0 10px #22c55e; }
         @keyframes fillBar { to { width: 100%; } }
+        .game-progress-bar-fill { height: 100%; background: #22c55e; width: 0%; box-shadow: 0 0 10px #22c55e; transition: width 1s linear; }
         
         .timer-bar { height: 8px; background: #ef4444; width: 100%; border-radius: 4px; transition: width 1s linear; }
-        
+        .bracket-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.3; transition: 0.5s; }
+        .bracket-stage.active { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(34,197,94,0.5)); }
+
         /* Mini Games Controls */
         .ttt-cell { display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; background: rgba(255,255,255,0.05); border-radius: 1rem; cursor: pointer; transition: 0.2s; aspect-ratio: 1; }
         .ttt-cell:hover { background: rgba(255,255,255,0.1); }
@@ -63,7 +66,15 @@
         .loader { border: 2px solid #f3f3f3; border-top: 2px solid #22c55e; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; margin-left: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* אנימציית רולטה */
+        /* RPG Dungeon Cards */
+        .rpg-card { aspect-ratio: 2/3; perspective: 1000px; cursor: pointer; }
+        .rpg-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .rpg-card.flipped .rpg-card-inner { transform: rotateY(180deg); }
+        .rpg-card-front, .rpg-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .rpg-card-front { background: linear-gradient(135deg, #4c1d95, #1e1b4b); border: 2px solid #a855f7; color: #d8b4fe; }
+        .rpg-card-back { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); transform: rotateY(180deg); }
+
+        /* roulette animation */
         .roulette-container { overflow: hidden; height: 60px; position: relative; background: rgba(0,0,0,0.5); border-radius: 1rem; border: 2px solid #a855f7; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         .roulette-strip { display: flex; flex-direction: column; transition: transform 3s cubic-bezier(0.1, 0.8, 0.1, 1); }
         .roulette-item { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
@@ -93,7 +104,7 @@
 
     <div id="gameLoader" class="fixed inset-0 z-[150] loader-bg flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-500">
         <div id="gameLoaderSvgContainer"></div>
-        <div class="progress-bar-container"><div id="gameProgressBarFill" class="game-progress-bar-fill h-full bg-green-500 w-0 transition-all duration-1000"></div></div>
+        <div class="progress-bar-container"><div id="gameProgressBarFill" class="game-progress-bar-fill w-0"></div></div>
         <p id="gameLoaderText" class="text-green-400 mt-4 font-black tracking-widest text-sm uppercase">טוען משחק...</p>
     </div>
 
@@ -143,7 +154,7 @@
                 <div class="text-center mb-8"><div class="text-5xl mb-4 text-green-400"><i data-lucide="gamepad" class="w-16 h-16 mx-auto"></i></div><h3 class="text-2xl font-bold">חשבון שחקן בענן</h3></div>
                 <div class="space-y-4">
                     <button onclick="window.showForm('register')" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl border border-white/10">הרשמה לחשבון חדש</button>
-                    <button onclick="window.showForm('login')" class="w-full bg-green-600 text-white font-black py-3 rounded-xl">התחברות</button>
+                    <button onclick="window.showForm('login')" class="w-full bg-green-600 text-black font-black py-3 rounded-xl">התחברות</button>
                 </div>
             </div>
             <div id="registerForm" class="hidden">
@@ -152,8 +163,8 @@
                     <input type="text" id="regDisplayName" placeholder="שם שחקן (כינוי)" class="input-style text-right">
                     <input type="email" id="regEmail" placeholder="אימייל" class="input-style input-ltr">
                     <input type="password" id="regPassword" placeholder="סיסמה" class="input-style input-ltr">
-                    <button id="regSubmitBtn" onclick="window.submitRegister()" class="w-full bg-green-600 text-white font-black py-3 rounded-xl mt-4">צור חשבון</button>
-                    <button onclick="window.showForm('choice')" class="w-full text-gray-500 text-xs py-2 block font-bold text-center hover:text-white">חזרה</button>
+                    <button id="regSubmitBtn" onclick="window.submitRegister()" class="w-full bg-green-600 text-black font-black py-3 rounded-xl mt-4">צור חשבון</button>
+                    <button onclick="window.showForm('choice')" class="w-full text-gray-500 text-xs py-2 block text-center hover:text-white">חזרה</button>
                 </div>
             </div>
             <div id="loginForm" class="hidden">
@@ -161,7 +172,7 @@
                 <div class="space-y-4">
                     <input type="email" id="loginEmail" placeholder="Email" class="input-style input-ltr">
                     <input type="password" id="loginPassword" placeholder="Password" class="input-style input-ltr">
-                    <button id="loginSubmitBtn" onclick="window.submitLogin()" class="w-full bg-green-600 text-white font-black py-3 rounded-xl">כניסה</button>
+                    <button id="loginSubmitBtn" onclick="window.submitLogin()" class="w-full bg-green-600 text-black font-black py-3 rounded-xl">כניסה</button>
                     <button onclick="window.showForm('choice')" class="w-full text-gray-500 text-xs py-2 block font-bold text-center hover:text-white">חזרה</button>
                 </div>
             </div>
@@ -227,7 +238,6 @@
                     <div class="border-t border-white/10 pt-4"><label class="text-xs text-gray-400 block mb-3 font-bold">🌆 בחר רקע כרטיס:</label><div id="bannerPickerGrid" class="flex flex-wrap gap-3"></div></div>
                     <button onclick="window.saveGamerCardData()" class="bg-green-600 hover:bg-green-500 text-white font-black py-3.5 rounded-xl shadow-lg transition-all text-sm mt-2">שמור שינויים בכרטיס השחקן 💾</button>
                     
-                    <!-- היסטוריית משחקים ל-39 ימים אחרונים -->
                     <div class="border-t border-white/10 pt-6">
                         <h4 class="text-lg font-bold text-white mb-4 text-right">⏳ היסטוריית פעילות (39 ימים אחרונים)</h4>
                         <div id="gameHistoryList" class="flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar">
@@ -257,7 +267,6 @@
 
             <!-- רשימת המשחקים בפורטל -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- משחק 3D קוסמי -->
                 <div class="glass-card p-6 flex flex-col justify-between border border-purple-500/10 relative overflow-hidden group min-h-[300px]" id="gameCard_rune">
                     <div class="absolute top-2 left-2 flex gap-2 z-30">
                         <button onclick="event.stopPropagation(); window.toggleFavoriteGame('rune')" class="p-2 bg-black/40 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded-full transition-all border border-white/10" id="favBtn_rune"><i data-lucide="heart" class="w-4 h-4"></i></button>
@@ -271,7 +280,6 @@
                     <button onclick="window.checkPremiumAccess('rune')" class="w-full bg-purple-600 text-white font-bold py-2.5 rounded-xl hover:bg-purple-500 shadow-md transition-all mt-auto z-10 flex items-center justify-center gap-2">שחק ב-3D 👑</button>
                 </div>
 
-                <!-- משחק החידון -->
                 <div class="glass-card p-6 flex flex-col justify-between border border-green-500/10 relative overflow-hidden group min-h-[300px]" id="gameCard_quiz">
                     <div class="absolute top-2 left-2 flex gap-2 z-30">
                         <button onclick="event.stopPropagation(); window.toggleFavoriteGame('quiz')" class="p-2 bg-black/40 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded-full transition-all border border-white/10" id="favBtn_quiz"><i data-lucide="heart" class="w-4 h-4"></i></button>
@@ -284,7 +292,6 @@
                     <button onclick="window.openQuizLobby()" class="w-full bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black font-bold py-2.5 rounded-xl transition-colors mt-auto z-10">היכנס לזירת הקרב</button>
                 </div>
 
-                <!-- בועות -->
                 <div class="glass-card p-6 flex flex-col justify-between border border-green-500/10 relative overflow-hidden group min-h-[300px]" id="gameCard_bubbles">
                     <div class="absolute top-2 left-2 flex gap-2 z-30">
                         <button onclick="event.stopPropagation(); window.toggleFavoriteGame('bubbles')" class="p-2 bg-black/40 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded-full transition-all border border-white/10" id="favBtn_bubbles"><i data-lucide="heart" class="w-4 h-4"></i></button>
@@ -297,7 +304,6 @@
                     <button onclick="window.openGame('bubbles')" class="w-full bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black font-bold py-2.5 rounded-xl transition-colors mt-auto z-10">שחק עכשיו</button>
                 </div>
 
-                <!-- סנייק -->
                 <div class="glass-card p-6 flex flex-col justify-between border border-green-500/10 relative overflow-hidden group min-h-[300px]" id="gameCard_snake">
                     <div class="absolute top-2 left-2 flex gap-2 z-30">
                         <button onclick="event.stopPropagation(); window.toggleFavoriteGame('snake')" class="p-2 bg-black/40 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded-full transition-all border border-white/10" id="favBtn_snake"><i data-lucide="heart" class="w-4 h-4"></i></button>
@@ -310,7 +316,6 @@
                     <button onclick="window.openGame('snake')" class="w-full bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black font-bold py-2.5 rounded-xl transition-colors mt-auto z-10">שחק עכשיו</button>
                 </div>
 
-                <!-- איקס עיגול -->
                 <div class="glass-card p-6 flex flex-col justify-between border border-green-500/10 relative overflow-hidden group min-h-[300px]" id="gameCard_tictactoe">
                     <div class="absolute top-2 left-2 flex gap-2 z-30">
                         <button onclick="event.stopPropagation(); window.toggleFavoriteGame('tictactoe')" class="p-2 bg-black/40 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded-full transition-all border border-white/10" id="favBtn_tictactoe"><i data-lucide="heart" class="w-4 h-4"></i></button>
@@ -355,7 +360,7 @@
             </div>
         </div>
 
-        <!-- אזור חנות שבועית מתחלפת ומקוטלגת -->
+        <!-- אזור חנות שבועית מתחלפת (Weekly Rotating Shop) -->
         <div id="shopSection" class="hidden flex-col gap-6 animate-fade-in max-w-4xl mx-auto w-full relative z-10">
             <div class="flex flex-col md:flex-row justify-between items-center bg-white/5 border border-white/10 rounded-3xl p-6 gap-4">
                 <div class="text-right">
@@ -497,7 +502,6 @@
                 <p class="text-gray-300 mb-6">סובב את רולטת האבן לקבלת שדרוג:</p>
                 <div class="roulette-container w-full mb-6">
                     <div id="rouletteStrip" class="roulette-strip">
-                        <!-- תוכן הרולטה -->
                         <div class="roulette-item text-orange-400">⚔️ +5 נזק התקפה</div>
                         <div class="roulette-item text-red-400">❤️ +20 חיים מירביים</div>
                         <div class="roulette-item text-yellow-400">🪙 +150 SMC לחנות</div>
@@ -520,13 +524,30 @@
         </div>
     </div>
 
-    <!-- מודאל משחק סנייק -->
+    <!-- מודאל משחק סנייק המעודכן עם אירועי Milestone! -->
     <div id="gameSnakeModal" class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center hidden">
         <button onclick="window.closeGame('snake')" class="absolute top-6 left-6 text-gray-400 hover:text-white bg-white/10 p-2 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
-        <div class="text-center mb-4"><h2 class="text-3xl font-black text-green-400 tracking-widest uppercase">Smart Snake</h2><p class="text-white font-bold text-xl mt-2">ניקוד: <span id="snakeScore" class="text-green-500">0</span></p></div>
-        <canvas id="gameCanvas" width="300" height="300"></canvas>
+        <div class="text-center mb-4">
+            <h2 class="text-3xl font-black text-green-400 tracking-widest uppercase">Smart Snake</h2>
+            <p class="text-white font-bold text-xl mt-2">ניקוד: <span id="snakeScore" class="text-green-500">0</span></p>
+        </div>
+        
+        <div class="relative">
+            <canvas id="gameCanvas" width="300" height="300" class="border border-green-500/30 rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.1)]"></canvas>
+            <!-- הודעות צפות (Milestones) שיופיעו על המסך בזמן המשחק -->
+            <div id="snakeEventToast" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm border border-yellow-400/50 text-yellow-400 font-bold px-4 py-2 rounded-xl text-sm whitespace-nowrap opacity-0 transition-opacity duration-300 pointer-events-none text-center">
+                אירוע!
+            </div>
+        </div>
+
         <button id="btnStartSnake" onclick="window.startSnakeGame()" class="mt-6 bg-green-500 hover:bg-green-400 text-black font-black py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all">התחל משחק</button>
-        <div class="grid grid-cols-3 gap-2 mt-8 md:hidden"><div></div><button class="d-pad-btn" onclick="window.snakeDir='UP'"><i data-lucide="chevron-up"></i></button><div></div><button class="d-pad-btn" onclick="window.snakeDir='LEFT'"><i data-lucide="chevron-left"></i></button><button class="d-pad-btn bg-white/5" onclick="window.snakeDir='DOWN'"><i data-lucide="chevron-down"></i></button><button class="d-pad-btn" onclick="window.snakeDir='RIGHT'"><i data-lucide="chevron-right"></i></button></div>
+        
+        <div class="grid grid-cols-3 gap-2 mt-8 md:hidden">
+            <div></div><button class="d-pad-btn" onclick="window.snakeDir='UP'"><i data-lucide="chevron-up"></i></button><div></div>
+            <button class="d-pad-btn" onclick="window.snakeDir='LEFT'"><i data-lucide="chevron-left"></i></button>
+            <button class="d-pad-btn bg-white/5" onclick="window.snakeDir='DOWN'"><i data-lucide="chevron-down"></i></button>
+            <button class="d-pad-btn" onclick="window.snakeDir='RIGHT'"><i data-lucide="chevron-right"></i></button>
+        </div>
     </div>
 
     <!-- מודאל איקס עיגול -->
@@ -536,24 +557,21 @@
         <div class="grid grid-cols-3 gap-3 bg-white/5 p-4 rounded-2xl w-full max-w-[320px]" id="tttBoard"><div class="ttt-cell" onclick="window.tttClick(0)"></div><div class="ttt-cell" onclick="window.tttClick(1)"></div><div class="ttt-cell" onclick="window.tttClick(2)"></div><div class="ttt-cell" onclick="window.tttClick(3)"></div><div class="ttt-cell" onclick="window.tttClick(4)"></div><div class="ttt-cell" onclick="window.tttClick(5)"></div><div class="ttt-cell" onclick="window.tttClick(6)"></div><div class="ttt-cell" onclick="window.tttClick(7)"></div><div class="ttt-cell" onclick="window.tttClick(8)"></div></div>
     </div>
 
-    <!-- מודאל בועות עם כפתור פצצה -->
+    <!-- מודאל בועות -->
     <div id="gameBubblesModal" class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center hidden">
         <button onclick="window.closeGame('bubbles')" class="absolute top-6 left-6 text-gray-400 hover:text-white bg-white/10 p-2 rounded-full z-50"><i data-lucide="x" class="w-6 h-6"></i></button>
-        
         <div class="absolute top-20 right-6 z-50">
             <button onclick="window.useBubblesBomb()" class="bg-red-600 hover:bg-red-500 text-white font-black py-3 px-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.6)] transition-all flex items-center gap-2 border border-red-400">
                 <span>💣 מגה פצצה</span>
                 <span class="bg-black/40 px-2 py-0.5 rounded-md text-sm" id="bubblesBombCount">0</span>
             </button>
         </div>
-
         <div class="text-center mb-4"><h2 class="text-3xl font-black text-cyan-400 tracking-widest uppercase">Smart Bubbles</h2><p class="text-cyan-400 font-bold text-lg mt-2">ניקוד: <span id="bubblesScore">0</span></p></div>
         <canvas id="bubblesCanvas" width="320" height="320" class="border-2 border-cyan-500/50 rounded-2xl bg-slate-900 cursor-pointer shadow-[0_0_20px_rgba(6,182,212,0.3)]"></canvas>
     </div>
 
-    <!-- מודול החידון הגדול (Smart Quiz Ultimate) -->
+    <!-- מודול החידון הגדול -->
     <div id="quizAppArea" class="max-w-4xl mx-auto w-full px-4 hidden flex-col gap-6 animate-fade-in pb-20">
-        <!-- תפריט ראשי של החידון -->
         <div id="quizMainMenu" class="glass-card p-8 text-center flex flex-col gap-6">
             <h2 class="text-4xl font-black text-yellow-400">בחר מצב משחק</h2>
             <button onclick="window.startKnockoutMode()" class="bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-black py-5 px-6 rounded-2xl shadow-xl flex items-center justify-center gap-4 hover:scale-105 transition-transform text-xl"><i data-lucide="trophy" class="w-8 h-8"></i> טורניר נוק-אאוט</button>
@@ -563,8 +581,6 @@
             </div>
             <button onclick="window.closeQuizLobby()" class="text-gray-500 mt-4 underline">חזור לתפריט הראשי</button>
         </div>
-
-        <!-- חדר המתנה (Lobby) אונליין -->
         <div id="quizLobbyArea" class="glass-card p-8 text-center hidden flex-col gap-6 border-blue-500/50">
             <h2 class="text-3xl font-black text-white">חדר המתנה</h2>
             <div class="bg-blue-900/30 p-6 rounded-2xl border border-blue-500/50 inline-block mx-auto"><p class="text-6xl font-black text-blue-400 tracking-widest font-mono" id="lobbyPinDisplay">----</p></div>
@@ -572,8 +588,6 @@
             <button id="btnStartOnlineGame" onclick="window.startOnlineGame()" class="hidden bg-green-500 text-black font-black py-4 rounded-xl text-xl mt-6">התחל משחק!</button>
             <p id="waitingForHostMsg" class="text-yellow-400 font-bold mt-6 animate-pulse hidden">ממתין למארח...</p>
         </div>
-
-        <!-- תצוגת מסלול נוקאאוט -->
         <div id="knockoutBracketArea" class="glass-card p-8 text-center hidden flex-col gap-8">
             <h2 class="text-4xl font-black text-yellow-500">🏆 טורניר אליפות</h2>
             <div class="flex justify-between items-center relative py-10 px-4">
@@ -587,16 +601,12 @@
             <div class="bg-black/50 p-6 rounded-2xl border border-white/10 mt-4"><h3 class="text-xl font-bold text-white mb-2" id="vsOpponentName">אתה מתמודד מול: </h3></div>
             <button onclick="window.startKnockoutRound()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black py-4 px-10 rounded-xl text-xl hover:scale-105 transition-transform mx-auto w-max">התחל משחק!</button>
         </div>
-
-        <!-- אזור המשחק הפעיל -->
         <div id="quizActiveGameArea" class="glass-card p-6 text-center hidden flex-col gap-6 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 w-full bg-gray-800 h-2"><div id="gameTimerBar" class="timer-bar"></div></div>
             <div class="flex justify-between items-center mt-2 px-2"><span id="gameStageLabel" class="text-xs bg-white/10 px-3 py-1 rounded-full text-gray-300">שאלה 1</span><span id="gameScoreLabel" class="text-xl font-black text-yellow-400">0</span></div>
             <div id="questionContainer" class="min-h-[250px] flex flex-col justify-center"><h3 id="questionText" class="text-2xl md:text-3xl font-black text-white leading-tight mb-8">טוען שאלה...</h3><div id="mcqAnswers" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div><div id="sortAnswers" class="flex flex-col gap-3 hidden max-w-md mx-auto w-full"></div></div>
             <div id="hostControls" class="hidden border-t border-white/10 pt-4 mt-4"><button onclick="window.hostNextQuestion()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl">המשך לשאלה הבאה (מארח)</button></div>
         </div>
-
-        <!-- מסך סיום / תוצאות המשחק -->
         <div id="quizResultsArea" class="glass-card p-8 text-center hidden flex-col gap-6">
             <div id="resultIcon" class="text-7xl mb-2">🎉</div><h2 id="resultTitle" class="text-4xl font-black text-white mb-2">המשחק הסתיים!</h2>
             <div id="leaderboardList" class="flex flex-col gap-3 max-w-md mx-auto w-full bg-black/30 p-4 rounded-2xl border border-white/10"></div>
@@ -605,13 +615,12 @@
         </div>
     </div>
 
-    <!-- קוד המנוע המרכזי של הפורטל והמשחקים (Script יחיד למניעת התנגשויות) -->
+    <!-- קוד המנוע המרכזי של הפורטל והמשחקים -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // 1. הגדרת סביבה ומשתנים קריטיים
         const fbConfig = {
             apiKey: ["AIza", "SyA27O_", "tEwAdUIU", "N4NxwBj", "dQi8FcTjHOAM0"].join(''),
             authDomain: "shoval2-ec154.firebaseapp.com",
@@ -620,18 +629,10 @@
             messagingSenderId: "118826356032",
             appId: "1:118826356032:web:a987981f3b450b3fce3ea5"
         };
-        
-        // יצירת מופע יחיד של Firebase כדי למנוע קריסות
         const app = initializeApp(fbConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = fbConfig.projectId;
-
-        window.auth = auth;
-        window.db = db;
-        window.appId = appId;
-        window.currentPlan = localStorage.getItem('smart_plan') || 'free';
-        window.isManager = false;
+        window.auth = getAuth(app);
+        window.db = getFirestore(app);
+        window.appId = fbConfig.projectId;
 
         // --- GLOBAL VARIABLES DECLARATION ---
         window.showToast = (msg, isError = true) => {
@@ -639,7 +640,10 @@
             if (toast) { toast.textContent = msg; toast.style.background = isError ? "#ef4444" : "#22c55e"; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
         };
 
-        // Snake
+        window.currentPlan = localStorage.getItem('smart_plan') || 'free';
+        window.isManager = false;
+
+        // *** Snake Game Variables (With Milestones!) ***
         let sCanvas, sCtx;
         const grid = 15;
         let score = 0;
@@ -647,35 +651,31 @@
         let apple = { x: 300, y: 300 };
         window.snakeDir = 'RIGHT';
         window.snakeGameLoop = null;
+        
+        // משתני מערכת האתגרים בסנייק
+        let snakeBaseSpeed = 100;
+        let currentSnakeSpeed = 100;
+        let lastMilestone = 0;
+        let goldenApple = null; // {x, y, timer}
+        let frenzyApples = [];  // [{x, y}, {x, y}...]
+        let speedBuffRemaining = 0; // כמה תפוחים צריך לאכול כדי לבטל את המהירות
 
         // Tic-Tac-Toe
-        let tttBoard = ['','','','','','','','',''];
-        let tttPlayer = 'X';
-        let tttActive = true;
-        const winConds = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        let tttBoard = ['','','','','','','','','']; let tttPlayer = 'X'; let tttActive = true; const winConds = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
         // Bubbles
-        let bCanvas, bCtx;
-        const bRows = 8, bCols = 8, bCellSize = 40;
-        let bBoard = [], bScore = 0;
-        const bColors = ['#ec4899','#3b82f6','#10b981','#f59e0b','#a855f7'];
+        let bCanvas, bCtx; const bRows = 8, bCols = 8, bCellSize = 40; let bBoard = [], bScore = 0; const bColors = ['#ec4899','#3b82f6','#10b981','#f59e0b','#a855f7'];
 
         // Racing 3D
-        let rCanvas, rCtx, racingInterval;
-        let racingScore = 0, racingSpeed = 0, carX = 160;
-        let obstacles = [];
-        window.racingLeft = false; window.racingRight = false;
+        let rCanvas, rCtx, racingInterval; let racingScore = 0, racingSpeed = 0, carX = 160; let obstacles = []; window.racingLeft = false; window.racingRight = false;
 
         // Rune Quest 3D
-        let runeScene, runeCamera, runeRenderer, runePlayer, runeTerrain;
-        let runeItems = [], runeScore = 0, activeMonster = null;
-        window.runeKeys = { up: false, down: false, left: false, right: false };
-        window.runeAnimId = null;
-
+        let runeScene, runeCamera, runeRenderer, runePlayer, runeTerrain; let runeItems = [], runeScore = 0, activeMonster = null; window.runeKeys = { up: false, down: false, left: false, right: false }; window.runeAnimId = null;
+        
         let currentPassStart = 1;
         let activeShopCategory = 'skins'; 
 
-        // User Data הכולל הגדרות פרופיל, מועדפים, תיק ציוד, רכישות והיסטוריה 
+        // User Data
         window.userData = { 
             xp: 0, smc: 12000, tier: 1, 
             unlockedSkins: ["default"], unlockedAvatars: ["🎮", "👾", "🤖"], 
@@ -688,26 +688,9 @@
             purchasedItems: [] 
         };
         
-        window.userQuests = {
-            login: { done: false, desc: "התחבר למערכת", reward: 50 },
-            playRune: { done: false, desc: "שחק ב-Rune Quest 3D", reward: 100 },
-            popBubbles: { done: false, desc: "פוצץ 50 בועות ב-Smart Bubbles", reward: 50, progress: 0 }
-        };
+        window.userQuests = { login: { done: false, desc: "התחבר למערכת", reward: 50 }, playRune: { done: false, desc: "שחק ב-Rune Quest 3D", reward: 100 }, popBubbles: { done: false, desc: "פוצץ 50 בועות ב-Smart Bubbles", reward: 50, progress: 0 } };
 
-        // ... Data and Shops definitions ...
-        const passRewards = [
-            { tier: 1, type: "smc", amount: 100, label: "100 SMC", isPremium: false },
-            { tier: 2, type: "rpg_item", value: "sword_rare", label: "חרב פלדה (RPG) ⚔️", isPremium: false },
-            { tier: 3, type: "banner", value: "neon_green", label: "רקע ניאון ירוק 🧪", isPremium: false },
-            { tier: 4, type: "rpg_item", value: "staff_epic", label: "מטה כישוף אפי (RPG) 🔮", isPremium: true },
-            { tier: 5, type: "banner", value: "cyber_violet", label: "רקע סייבר סגול 👾", isPremium: false }
-        ];
-
-        const smcPackages = [
-            { id: "smc_400", name: "חבילה בסיסית: 400 SMC", cost: "₪14.90", coins: 400, preview: "🪙" },
-            { id: "smc_800", name: "חבילת גיימר: 800 SMC", cost: "₪29.90", coins: 800, preview: "🪙✨" },
-            { id: "smc_2000", name: "חבילת ענק: 2000 SMC", cost: "₪69.90", coins: 2000, preview: "👑🪙" }
-        ];
+        const passRewards = [ { tier: 1, type: "smc", amount: 100, label: "100 SMC", isPremium: false }, { tier: 2, type: "rpg_item", value: "sword_rare", label: "חרב פלדה (RPG) ⚔️", isPremium: false }, { tier: 3, type: "banner", value: "neon_green", label: "רקע ניאון ירוק 🧪", isPremium: false }, { tier: 4, type: "rpg_item", value: "staff_epic", label: "מטה כישוף אפי (RPG) 🔮", isPremium: true }, { tier: 5, type: "banner", value: "cyber_violet", label: "רקע סייבר סגול 👾", isPremium: false } ];
 
         const masterShopPool = [
             { id: "bundle_progamer", name: "חבילת Pro Gamer (רקעים ואימוג'ים) 🎮", costSMC: 8000, costXP: 80000, preview: "😎", type: "bundle", value: "progamer", category: "bundles" },
@@ -726,61 +709,37 @@
             { id: "color_cyber_violet", name: "צבע סקין: סגול סייבר עמוק 👾", costSMC: 70, costXP: 700, preview: "🟣", type: "color", value: "cyber_violet", category: "colors" }
         ];
 
+        const smcPackages = [{ id: "smc_400", name: "חבילה בסיסית: 400 SMC", cost: "₪14.90", coins: 400, preview: "🪙" }, { id: "smc_800", name: "חבילת גיימר: 800 SMC", cost: "₪29.90", coins: 800, preview: "🪙✨" }, { id: "smc_2000", name: "חבילת ענק: 2000 SMC", cost: "₪69.90", coins: 2000, preview: "👑🪙" }];
         const getWeekNumber = () => { const now = new Date(); const oneJan = new Date(now.getFullYear(), 0, 1); const numberOfDays = Math.floor((now - oneJan) / (24 * 60 * 60 * 1000)); return Math.ceil((now.getDay() + 1 + numberOfDays) / 7); };
         const getDaysUntilNextWeek = () => { const now = new Date(); const resultDate = new Date(); resultDate.setDate(now.getDate() + (7 - now.getDay()) % 7); resultDate.setHours(0,0,0,0); return Math.ceil(Math.abs(resultDate - now) / (1000 * 60 * 60 * 24)) || 7; };
         const getMonthNameHe = () => { const months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]; return months[new Date().getMonth()]; };
 
-        // --- סנכרון נתונים לפיירבייס ---
+        const initGameCanvasElements = () => { sCanvas = document.getElementById('gameCanvas'); sCtx = sCanvas ? sCanvas.getContext('2d') : null; bCanvas = document.getElementById('bubblesCanvas'); bCtx = bCanvas ? bCanvas.getContext('2d') : null; rCanvas = document.getElementById('racingCanvas'); rCtx = rCanvas ? rCanvas.getContext('2d') : null; };
+
+        // --- Data Sync ---
         window.loadUserData = async (user) => {
             if (!user || user.isAnonymous) return;
             try {
-                const docRef = doc(db, "artifacts", appId, "users", user.uid, "game_data", "stats");
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) { 
-                    const data = docSnap.data();
-                    window.userData = { ...window.userData, ...data }; 
-                    if(data.rpgStats) window.userData.rpgStats = { ...window.userData.rpgStats, ...data.rpgStats };
-                    if(!window.userData.inventory) window.userData.inventory = { potions: 2, bubbles_bombs: 0 };
-                    if(!window.userData.purchasedItems) window.userData.purchasedItems = [];
-                } else { 
-                    window.userData.smc = 12000;
-                    await setDoc(docRef, window.userData); 
-                    window.showToast("ברוך הבא! קיבלת 12,000 SMC במתנה לרגל הרישום הראשון! 🎁🪙", false);
-                }
-                window.userQuests.login.done = true; 
-                window.updateUIStats(); window.renderPass(); window.renderShop(); window.renderGamerCardEditor(); window.renderQuests(); window.renderNetflixBanner();
+                const docRef = doc(window.db, "artifacts", window.appId, "users", user.uid, "game_data", "stats"); const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) { const data = docSnap.data(); window.userData = { ...window.userData, ...data }; if(data.rpgStats) window.userData.rpgStats = { ...window.userData.rpgStats, ...data.rpgStats }; if(!window.userData.inventory) window.userData.inventory = { potions: 2, bubbles_bombs: 0 }; if(!window.userData.purchasedItems) window.userData.purchasedItems = []; } else { window.userData.smc = 12000; await setDoc(docRef, window.userData); window.showToast("ברוך הבא! קיבלת 12,000 SMC במתנה לרגל הרישום הראשון! 🎁🪙", false); }
+                window.userQuests.login.done = true; window.updateUIStats(); window.renderPass(); window.renderShop(); window.renderGamerCardEditor(); window.renderQuests(); window.renderNetflixBanner();
             } catch(e) { console.error(e); }
         };
-
-        window.saveUserData = async () => {
-            const user = auth.currentUser;
-            if (!user || user.isAnonymous) return;
-            try {
-                const docRef = doc(db, "artifacts", appId, "users", user.uid, "game_data", "stats");
-                await setDoc(docRef, window.userData, { merge: true });
-                window.updateUIStats();
-            } catch(e) { console.error(e); }
-        };
+        window.saveUserData = async () => { const user = window.auth.currentUser; if (!user || user.isAnonymous) return; try { const docRef = doc(window.db, "artifacts", window.appId, "users", user.uid, "game_data", "stats"); await setDoc(docRef, window.userData, { merge: true }); window.updateUIStats(); } catch(e) { console.error(e); } };
 
         window.updateUIStats = () => {
             if(document.getElementById('navSMC')) document.getElementById('navSMC').textContent = window.userData.smc;
             if(document.getElementById('navXP')) document.getElementById('navXP').textContent = window.userData.xp;
             if(document.getElementById('navGamerTag')) document.getElementById('navGamerTag').textContent = window.userData.gamerTag;
             if(document.getElementById('navAvatarDisplay')) document.getElementById('navAvatarDisplay').textContent = window.userData.activeAvatar;
-            
-            const currentTier = Math.floor(window.userData.xp / 1000) + 1;
-            window.userData.tier = currentTier;
-
+            const currentTier = Math.floor(window.userData.xp / 1000) + 1; window.userData.tier = currentTier;
             if(document.getElementById('cardGamerTag')) document.getElementById('cardGamerTag').textContent = window.userData.gamerTag;
             if(document.getElementById('cardBio')) document.getElementById('cardBio').textContent = window.userData.bio;
             if(document.getElementById('cardAvatar')) document.getElementById('cardAvatar').textContent = window.userData.activeAvatar;
             if(document.getElementById('cardSMC')) document.getElementById('cardSMC').textContent = window.userData.smc;
             if(document.getElementById('cardXP')) document.getElementById('cardXP').textContent = window.userData.xp;
             if(document.getElementById('cardTierLabel')) document.getElementById('cardTierLabel').textContent = `Tier ${currentTier} Champion`;
-            
-            const liveCard = document.getElementById('liveGamerCard');
-            if(liveCard) { liveCard.className = `p-6 rounded-2xl flex flex-col justify-between aspect-[3/4] shadow-[0_15px_35px_rgba(0,0,0,0.6)] relative overflow-hidden transition-all duration-500 banner-${window.userData.activeSkin}`; }
-
+            const liveCard = document.getElementById('liveGamerCard'); if(liveCard) { liveCard.className = `p-6 rounded-2xl flex flex-col justify-between aspect-[3/4] shadow-[0_15px_35px_rgba(0,0,0,0.6)] relative overflow-hidden transition-all duration-500 banner-${window.userData.activeSkin}`; }
             const progressXP = window.userData.xp % 1000;
             if(document.getElementById('passNextTier')) document.getElementById('passNextTier').textContent = `Tier ${currentTier + 1}`;
             if(document.getElementById('passCurrentTier')) document.getElementById('passCurrentTier').textContent = `Tier ${currentTier}`;
@@ -788,10 +747,9 @@
             if(document.getElementById('passProgressXP')) document.getElementById('passProgressXP').textContent = progressXP;
             if(document.getElementById('shopCoinsDisplay')) document.getElementById('shopCoinsDisplay').textContent = window.userData.smc;
             if(document.getElementById('shopXPDisplay')) document.getElementById('shopXPDisplay').textContent = window.userData.xp;
-
             if(document.getElementById('runeHpLabel')) document.getElementById('runeHpLabel').textContent = `${window.userData.rpgStats.hp}/${window.userData.rpgStats.maxHp}`;
             if(document.getElementById('runeDmgLabel')) document.getElementById('runeDmgLabel').textContent = window.userData.rpgStats.damage;
-
+            
             if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 };
             if(document.getElementById('invPotionCount')) document.getElementById('invPotionCount').textContent = window.userData.inventory.potions;
             if(document.getElementById('invPotionCountCombat')) document.getElementById('invPotionCountCombat').textContent = window.userData.inventory.potions;
@@ -801,450 +759,261 @@
             if (shieldStatus) {
                 if (window.userData.rpgStats.shieldExpiry && Date.now() < window.userData.rpgStats.shieldExpiry) {
                     const daysLeft = Math.ceil((window.userData.rpgStats.shieldExpiry - Date.now()) / (1000 * 60 * 60 * 24));
-                    shieldStatus.textContent = `🛡️ מגן פעיל (${daysLeft} ימים)`;
-                    shieldStatus.className = "text-xs text-blue-400 font-bold bg-blue-500/20 p-2 rounded-lg text-center border border-blue-500/30";
-                } else {
-                    shieldStatus.textContent = "🛡️ מגן: לא פעיל";
-                    shieldStatus.className = "text-xs text-gray-400 font-bold bg-white/5 p-2 rounded-lg text-center border border-white/5";
-                }
+                    shieldStatus.textContent = `🛡️ מגן פעיל (${daysLeft} ימים)`; shieldStatus.className = "text-xs text-blue-400 font-bold bg-blue-500/20 p-2 rounded-lg text-center border border-blue-500/30";
+                } else { shieldStatus.textContent = "🛡️ מגן: לא פעיל"; shieldStatus.className = "text-xs text-gray-400 font-bold bg-white/5 p-2 rounded-lg text-center border border-white/5"; }
             }
-
-            window.renderHistoryLogs();
-            window.updateFavoriteIcons();
+            window.renderHistoryLogs(); window.updateFavoriteIcons();
         };
 
-        window.logGamePlay = (gameName, scoreVal) => {
-            const entry = { name: gameName, score: scoreVal, timestamp: new Date().toISOString() };
-            if(!window.userData.gameHistory) window.userData.gameHistory = [];
-            window.userData.gameHistory.push(entry);
-            const limit = Date.now() - (39 * 24 * 60 * 60 * 1000);
-            window.userData.gameHistory = window.userData.gameHistory.filter(h => new Date(h.timestamp).getTime() > limit);
-            window.saveUserData(); window.renderNetflixBanner();
-        };
-
-        window.renderHistoryLogs = () => {
-            const container = document.getElementById('gameHistoryList');
-            if(!container) return;
-            const history = window.userData.gameHistory || [];
-            if(history.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">אין משחקים מתועדים ב-39 הימים האחרונים.</p>`; return;
-            }
-            container.innerHTML = '';
-            const sorted = [...history].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-            sorted.forEach(h => {
-                const dateObj = new Date(h.timestamp); const dateStr = dateObj.toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'});
-                const div = document.createElement('div'); div.className = "flex justify-between items-center bg-white/5 p-2 rounded-xl text-xs border border-white/5";
-                div.innerHTML = `<span class="font-bold text-gray-300">${h.name} (${h.score} נק')</span><span class="text-gray-500 font-medium">${dateStr}</span>`;
-                container.appendChild(div);
-            });
-        };
-
-        window.rewardPlayer = (earnedXP, earnedSMC) => {
-            window.userData.xp += earnedXP; window.userData.smc += earnedSMC;
-            window.showToast(`מדהים! קיבלת +${earnedXP} XP ו-+${earnedSMC} SMC! ✨🪙`, false);
-            window.updateUIStats(); window.saveUserData(); window.checkQuests();
-        };
+        window.logGamePlay = (gameName, scoreVal) => { const entry = { name: gameName, score: scoreVal, timestamp: new Date().toISOString() }; if(!window.userData.gameHistory) window.userData.gameHistory = []; window.userData.gameHistory.push(entry); const limit = Date.now() - (39 * 24 * 60 * 60 * 1000); window.userData.gameHistory = window.userData.gameHistory.filter(h => new Date(h.timestamp).getTime() > limit); window.saveUserData(); window.renderNetflixBanner(); };
+        window.renderHistoryLogs = () => { const container = document.getElementById('gameHistoryList'); if(!container) return; const history = window.userData.gameHistory || []; if(history.length === 0) { container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">אין משחקים מתועדים ב-39 הימים האחרונים.</p>`; return; } container.innerHTML = ''; const sorted = [...history].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); sorted.forEach(h => { const dateObj = new Date(h.timestamp); const dateStr = dateObj.toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'}); const div = document.createElement('div'); div.className = "flex justify-between items-center bg-white/5 p-2 rounded-xl text-xs border border-white/5"; div.innerHTML = `<span class="font-bold text-gray-300">${h.name} (${h.score} נק')</span><span class="text-gray-500 font-medium">${dateStr}</span>`; container.appendChild(div); }); };
+        window.rewardPlayer = (earnedXP, earnedSMC) => { window.userData.xp += earnedXP; window.userData.smc += earnedSMC; window.showToast(`מדהים! קיבלת +${earnedXP} XP ו-+${earnedSMC} SMC! ✨🪙`, false); window.updateUIStats(); window.saveUserData(); window.checkQuests(); };
 
         // --- Quests ---
-        window.renderQuests = () => {
-            const grid = document.getElementById('questsListGrid');
-            if (!grid) return; grid.innerHTML = '';
-            Object.keys(window.userQuests).forEach(key => {
-                const q = window.userQuests[key]; const card = document.createElement('div');
-                card.className = `quest-card glass-card p-4 flex justify-between items-center ${q.done ? 'completed' : 'border-white/10'}`;
-                let actionHtml = q.done ? `<span class="text-green-400 font-bold text-sm">הושלם ✅</span>` : `<button onclick="window.claimQuest('${key}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-bold">אסוף ${q.reward} SMC</button>`;
-                let progressHtml = q.progress !== undefined ? `<div class="text-xs text-gray-400 mt-1">${q.progress}/50</div>` : '';
-                card.innerHTML = `<div class="text-right"><h4 class="font-bold text-white text-sm">${q.desc}</h4><span class="text-xs text-yellow-400 font-bold">פרס: ${q.reward} SMC 🪙</span>${progressHtml}</div><div>${actionHtml}</div>`;
-                grid.appendChild(card);
-            });
-        };
-
-        window.claimQuest = (key) => {
-            const q = window.userQuests[key];
-            if (q.done) return window.showToast("כבר אספת את הפרס הזה!", true);
-            if (key === 'popBubbles' && q.progress < 50) return window.showToast("עוד לא סיימת לפוצץ 50 בועות!", true);
-            if (key === 'playRune' && !q.done) return window.showToast("עוד לא שיחקת היום ב-Rune Quest!", true);
-            q.done = true; window.rewardPlayer(50, q.reward); window.renderQuests();
-        };
-
-        window.checkQuests = () => {
-            if (window.userQuests.popBubbles.progress >= 50 && !window.userQuests.popBubbles.done) {
-                window.showToast("משימה הושלמה: פוצצת 50 בועות! כנס לטאב משימות לאסוף פרס 🎯", false);
-            }
-        };
+        window.renderQuests = () => { const grid = document.getElementById('questsListGrid'); if (!grid) return; grid.innerHTML = ''; Object.keys(window.userQuests).forEach(key => { const q = window.userQuests[key]; const card = document.createElement('div'); card.className = `quest-card glass-card p-4 flex justify-between items-center ${q.done ? 'completed' : 'border-white/10'}`; let actionHtml = q.done ? `<span class="text-green-400 font-bold text-sm">הושלם ✅</span>` : `<button onclick="window.claimQuest('${key}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-bold">אסוף ${q.reward} SMC</button>`; let progressHtml = q.progress !== undefined ? `<div class="text-xs text-gray-400 mt-1">${q.progress}/50</div>` : ''; card.innerHTML = `<div class="text-right"><h4 class="font-bold text-white text-sm">${q.desc}</h4><span class="text-xs text-yellow-400 font-bold">פרס: ${q.reward} SMC 🪙</span>${progressHtml}</div><div>${actionHtml}</div>`; grid.appendChild(card); }); };
+        window.claimQuest = (key) => { const q = window.userQuests[key]; if (q.done) return window.showToast("כבר אספת את הפרס הזה!", true); if (key === 'popBubbles' && q.progress < 50) return window.showToast("עוד לא סיימת לפוצץ 50 בועות!", true); if (key === 'playRune' && !q.done) return window.showToast("עוד לא שיחקת היום ב-Rune Quest!", true); q.done = true; window.rewardPlayer(50, q.reward); window.renderQuests(); };
+        window.checkQuests = () => { if (window.userQuests.popBubbles.progress >= 50 && !window.userQuests.popBubbles.done) { window.showToast("משימה הושלמה: פוצצת 50 בועות! כנס לטאב משימות לאסוף פרס 🎯", false); } };
 
         // --- Gamer Card ---
-        window.previewGamerCard = () => {
-            const gt = document.getElementById('inputGamerTag')?.value.trim(); const bio = document.getElementById('inputBio')?.value.trim();
-            if(document.getElementById('cardGamerTag') && gt) document.getElementById('cardGamerTag').textContent = gt;
-            if(document.getElementById('cardBio') && bio) document.getElementById('cardBio').textContent = bio;
-        };
-
-        window.renderGamerCardEditor = () => {
-            const avatarGrid = document.getElementById('avatarPickerGrid'); const bannerGrid = document.getElementById('bannerPickerGrid');
-            if(!avatarGrid || !bannerGrid) return;
-            avatarGrid.innerHTML = ''; bannerGrid.innerHTML = '';
-            const gtInput = document.getElementById('inputGamerTag'); const bioInput = document.getElementById('inputBio');
-            if (gtInput) gtInput.value = window.userData.gamerTag; if (bioInput) bioInput.value = window.userData.bio;
-
-            window.userData.unlockedAvatars.forEach(av => {
-                const isSelected = window.userData.activeAvatar === av; const btn = document.createElement('button');
-                btn.className = `w-12 h-12 rounded-xl text-2xl flex items-center justify-center border-2 transition-all ${isSelected ? 'border-green-500 bg-green-500/20 scale-105' : 'border-white/10 bg-white/5 hover:border-white/40'}`;
-                btn.textContent = av; btn.onclick = () => { window.userData.activeAvatar = av; window.updateUIStats(); window.renderGamerCardEditor(); window.saveUserData(); };
-                avatarGrid.appendChild(btn);
-            });
-
-            window.userData.unlockedSkins.forEach(skin => {
-                const isSelected = window.userData.activeSkin === skin; const btn = document.createElement('button');
-                btn.className = `px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all banner-${skin} ${isSelected ? 'border-green-400 scale-105 text-white' : 'border-transparent text-gray-300'}`;
-                let skinName = skin;
-                if(skin === 'default') skinName = 'ברירת מחדל';
-                if(skin === 'skin_alien') skinName = 'חייזר קוסמי 🛸';
-                if(skin === 'skin_fire') skinName = 'להבה קוסמית 🔥';
-                if(skin === 'skin_gold') skinName = 'זהב קיסרי 👑';
-                if(skin === 'bundle_progamer') skinName = 'חדר גיימינג 🎮';
-                
-                btn.textContent = skinName; btn.onclick = () => { window.userData.activeSkin = skin; window.updateUIStats(); window.renderGamerCardEditor(); window.saveUserData(); };
-                bannerGrid.appendChild(btn);
-            });
-        };
-
-        window.saveGamerCardData = () => {
-            const gt = document.getElementById('inputGamerTag')?.value.trim(); const bio = document.getElementById('inputBio')?.value.trim();
-            if(gt) window.userData.gamerTag = gt; if(bio) window.userData.bio = bio;
-            window.saveUserData(); window.showToast("כרטיס השחקן (Gamer Card) עודכן ונשמר בענן! 🪪✨", false);
-        };
+        window.previewGamerCard = () => { const gt = document.getElementById('inputGamerTag')?.value.trim(); const bio = document.getElementById('inputBio')?.value.trim(); if(document.getElementById('cardGamerTag') && gt) document.getElementById('cardGamerTag').textContent = gt; if(document.getElementById('cardBio') && bio) document.getElementById('cardBio').textContent = bio; };
+        window.renderGamerCardEditor = () => { const avatarGrid = document.getElementById('avatarPickerGrid'); const bannerGrid = document.getElementById('bannerPickerGrid'); if(!avatarGrid || !bannerGrid) return; avatarGrid.innerHTML = ''; bannerGrid.innerHTML = ''; const gtInput = document.getElementById('inputGamerTag'); const bioInput = document.getElementById('inputBio'); if (gtInput) gtInput.value = window.userData.gamerTag; if (bioInput) bioInput.value = window.userData.bio; window.userData.unlockedAvatars.forEach(av => { const isSelected = window.userData.activeAvatar === av; const btn = document.createElement('button'); btn.className = `w-12 h-12 rounded-xl text-2xl flex items-center justify-center border-2 transition-all ${isSelected ? 'border-green-500 bg-green-500/20 scale-105' : 'border-white/10 bg-white/5 hover:border-white/40'}`; btn.textContent = av; btn.onclick = () => { window.userData.activeAvatar = av; window.updateUIStats(); window.renderGamerCardEditor(); window.saveUserData(); }; avatarGrid.appendChild(btn); }); window.userData.unlockedSkins.forEach(skin => { const isSelected = window.userData.activeSkin === skin; const btn = document.createElement('button'); btn.className = `px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all banner-${skin} ${isSelected ? 'border-green-400 scale-105 text-white' : 'border-transparent text-gray-300'}`; let skinName = skin; if(skin === 'default') skinName = 'ברירת מחדל'; if(skin === 'skin_alien') skinName = 'חייזר קוסמי 🛸'; if(skin === 'skin_fire') skinName = 'להבה קוסמית 🔥'; if(skin === 'skin_gold') skinName = 'זהב קיסרי 👑'; if(skin === 'bundle_progamer') skinName = 'חדר גיימינג 🎮'; btn.textContent = skinName; btn.onclick = () => { window.userData.activeSkin = skin; window.updateUIStats(); window.renderGamerCardEditor(); window.saveUserData(); }; bannerGrid.appendChild(btn); }); };
+        window.saveGamerCardData = () => { const gt = document.getElementById('inputGamerTag')?.value.trim(); const bio = document.getElementById('inputBio')?.value.trim(); if(gt) window.userData.gamerTag = gt; if(bio) window.userData.bio = bio; window.saveUserData(); window.showToast("כרטיס השחקן (Gamer Card) עודכן ונשמר בענן! 🪪✨", false); };
+        window.buyCoinsSimulate = () => { window.userData.smc += 200; window.showToast("הטענת 200 Smart Coins בהצלחה! 💰", false); window.saveUserData(); window.updateUIStats(); window.renderShop(); };
 
         // --- Game Pass ---
         window.shiftPassRange = (amount) => { currentPassStart = Math.max(1, Math.min(10000000 - 4, currentPassStart + amount)); window.renderPass(); };
-
-        window.renderPass = () => {
-            const container = document.getElementById('passRewardsGrid'); const rangeLabel = document.getElementById('passRangeLabel'); const themeBadge = document.getElementById('passThemeBadge');
-            if(!container) return; container.innerHTML = '';
-            if(themeBadge) themeBadge.textContent = `עונת ה-${getMonthNameHe()} 🌌 (מתעדכן כל חודש)`;
-            const passEnd = currentPassStart + 4;
-            if(rangeLabel) rangeLabel.textContent = `${currentPassStart.toLocaleString()}-${passEnd.toLocaleString()}`;
-
-            for (let t = currentPassStart; t <= passEnd; t++) {
-                const isClaimed = window.userData.claimedRewards.includes(t); const isUnlocked = window.userData.tier >= t;
-                let btnHtml = isClaimed ? `<span class="text-xs text-green-400 font-bold block mt-3">נאסף ✅</span>` : isUnlocked ? `<button onclick="window.claimPassReward(${t})" class="w-full mt-3 bg-yellow-500 hover:bg-yellow-400 text-black text-xs py-1.5 rounded-lg font-bold">אסוף!</button>` : `<span class="text-xs text-gray-500 block mt-3">רמה ${t.toLocaleString()}</span>`;
-                let type, label, preview;
-                if (t % 4 === 1) { type = "smc"; label = `SMC ${50 + (t * 5)}`; preview = "🪙"; } 
-                else if (t % 4 === 2) { const avatars = ["⭐", "👽", "🚀", "🛸", "🔥", "👑", "🔮", "🌿"]; const av = avatars[t % avatars.length]; label = `אווטאר: ${av}`; preview = av; } 
-                else if (t % 4 === 3) { type = "banner"; label = "סקין קוסמי 🪐"; preview = "🪐"; } 
-                else { type = "rpg_item"; label = "שדרוג נזק ⚔️"; preview = "⚔️"; }
-
-                const card = document.createElement('div');
-                card.className = `glass-card p-4 text-center border ${isUnlocked ? 'border-purple-500/50 bg-purple-900/10' : 'border-white/5 opacity-50'} flex flex-col justify-between items-center relative`;
-                card.innerHTML = `<div class="text-3xl my-2">${preview}</div><div class="text-xs text-gray-300 font-semibold">${label}</div><div class="text-[9px] text-gray-500 mt-1">Tier ${t.toLocaleString()}</div>${btnHtml}`;
-                container.appendChild(card);
-            }
-        };
-
-        window.claimPassReward = (tier) => {
-            if (window.userData.tier < tier || window.userData.claimedRewards.includes(tier)) return;
-            window.userData.claimedRewards.push(tier);
-
-            if (tier % 4 === 1) { window.userData.smc += (50 + (tier * 5)); window.showToast(`אספת ${(50 + (tier * 5))} Smart Coins! 🪙`, false); } 
-            else if (tier % 4 === 2) { const avatars = ["⭐", "👽", "🚀", "🛸", "🔥", "👑", "🔮", "🌿"]; const av = avatars[tier % avatars.length]; if(!window.userData.unlockedAvatars.includes(av)) window.userData.unlockedAvatars.push(av); window.showToast(`אווטאר חדש נפתח: ${av} 🎭`, false); } 
-            else if (tier % 4 === 3) { if(!window.userData.unlockedSkins.includes("skin_alien")) window.userData.unlockedSkins.push("skin_alien"); window.showToast(`רקע "חייזר בחלל החיצון 👽🛸" נפתח!`, false); } 
-            else { window.userData.rpgStats.damage += 5; window.showToast(`שדרוג נשק קבוע: נזק RPG עלה ב-5! ⚔️`, false); }
-
-            window.saveUserData(); window.updateUIStats(); window.renderPass(); window.renderGamerCardEditor();
-        };
+        window.renderPass = () => { const container = document.getElementById('passRewardsGrid'); const rangeLabel = document.getElementById('passRangeLabel'); const themeBadge = document.getElementById('passThemeBadge'); if(!container) return; container.innerHTML = ''; if(themeBadge) themeBadge.textContent = `עונת ה-${getMonthNameHe()} 🌌 (מתעדכן כל חודש)`; const passEnd = currentPassStart + 4; if(rangeLabel) rangeLabel.textContent = `${currentPassStart.toLocaleString()}-${passEnd.toLocaleString()}`; for (let t = currentPassStart; t <= passEnd; t++) { const isClaimed = window.userData.claimedRewards.includes(t); const isUnlocked = window.userData.tier >= t; let btnHtml = isClaimed ? `<span class="text-xs text-green-400 font-bold block mt-3">נאסף ✅</span>` : isUnlocked ? `<button onclick="window.claimPassReward(${t})" class="w-full mt-3 bg-yellow-500 hover:bg-yellow-400 text-black text-xs py-1.5 rounded-lg font-bold">אסוף!</button>` : `<span class="text-xs text-gray-500 block mt-3">רמה ${t.toLocaleString()}</span>`; let type, label, preview; if (t % 4 === 1) { type = "smc"; label = `SMC ${50 + (t * 5)}`; preview = "🪙"; } else if (t % 4 === 2) { const avatars = ["⭐", "👽", "🚀", "🛸", "🔥", "👑", "🔮", "🌿"]; const av = avatars[t % avatars.length]; label = `אווטאר: ${av}`; preview = av; } else if (t % 4 === 3) { type = "banner"; label = "סקין קוסמי 🪐"; preview = "🪐"; } else { type = "rpg_item"; label = "שדרוג נזק ⚔️"; preview = "⚔️"; } const card = document.createElement('div'); card.className = `glass-card p-4 text-center border ${isUnlocked ? 'border-purple-500/50 bg-purple-900/10' : 'border-white/5 opacity-50'} flex flex-col justify-between items-center relative`; card.innerHTML = `<div class="text-3xl my-2">${preview}</div><div class="text-xs text-gray-300 font-semibold">${label}</div><div class="text-[9px] text-gray-500 mt-1">Tier ${t.toLocaleString()}</div>${btnHtml}`; container.appendChild(card); } };
+        window.claimPassReward = (tier) => { if (window.userData.tier < tier || window.userData.claimedRewards.includes(tier)) return; window.userData.claimedRewards.push(tier); if (tier % 4 === 1) { window.userData.smc += (50 + (tier * 5)); window.showToast(`אספת ${(50 + (tier * 5))} Smart Coins! 🪙`, false); } else if (tier % 4 === 2) { const avatars = ["⭐", "👽", "🚀", "🛸", "🔥", "👑", "🔮", "🌿"]; const av = avatars[tier % avatars.length]; if(!window.userData.unlockedAvatars.includes(av)) window.userData.unlockedAvatars.push(av); window.showToast(`אווטאר חדש נפתח: ${av} 🎭`, false); } else if (tier % 4 === 3) { if(!window.userData.unlockedSkins.includes("skin_alien")) window.userData.unlockedSkins.push("skin_alien"); window.showToast(`רקע "חייזר בחלל החיצון 👽🛸" נפתח!`, false); } else { window.userData.rpgStats.damage += 5; window.showToast(`שדרוג נשק קבוע: נזק RPG עלה ב-5! ⚔️`, false); } window.saveUserData(); window.updateUIStats(); window.renderPass(); window.renderGamerCardEditor(); };
 
         // --- 🛒 חנות מקוטלגת ---
-        window.setShopCategory = (cat) => {
-            activeShopCategory = cat;
-            ['skins', 'upgrades', 'banners', 'weapons', 'colors', 'bundles', 'buy_smc', 'history'].forEach(c => {
-                const btn = document.getElementById(`shopTab_${c}`);
-                if (btn) {
-                    if (c === cat) {
-                        btn.classList.add('active', 'bg-yellow-500', 'text-black');
-                        btn.classList.remove('text-gray-400');
-                    } else {
-                        btn.classList.remove('active', 'bg-yellow-500', 'text-black');
-                        btn.classList.add('text-gray-400');
-                    }
-                }
-            });
-            window.renderShop();
-        };
-
+        window.setShopCategory = (cat) => { activeShopCategory = cat; ['skins', 'upgrades', 'banners', 'weapons', 'colors', 'bundles', 'buy_smc', 'history'].forEach(c => { const btn = document.getElementById(`shopTab_${c}`); if (btn) { if (c === cat) { btn.classList.add('active', 'bg-yellow-500', 'text-black'); btn.classList.remove('text-gray-400'); } else { btn.classList.remove('active', 'bg-yellow-500', 'text-black'); btn.classList.add('text-gray-400'); } } }); window.renderShop(); };
         window.renderShop = () => {
-            const container = document.getElementById('shopItemsGrid'); const timerEl = document.getElementById('shopTimerLabel');
-            if(!container) return; container.innerHTML = '';
-
-            const week = getWeekNumber(); const daysLeft = getDaysUntilNextWeek();
-            if(timerEl) timerEl.textContent = `החנות תתעדכן בפריטים חדשים בעוד ${daysLeft} ימים ⏳`;
-
-            if (activeShopCategory === 'history') {
-                const purchased = window.userData.purchasedItems || [];
-                if (purchased.length === 0) {
-                    container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 font-bold text-sm">טרם רכשת פריטים בפורטל. 📜</div>`;
-                    return;
-                }
-                purchased.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10";
-                    card.innerHTML = `<div class="text-4xl my-3">📦</div><h4 class="font-bold text-white text-sm leading-tight">${item.name}</h4><span class="text-xs text-green-400 font-bold mt-2">נרכש בהצלחה ✅</span>`;
-                    container.appendChild(card);
-                });
-                return;
-            }
-
-            if (activeShopCategory === 'buy_smc') {
-                smcPackages.forEach(pkg => {
-                    const card = document.createElement('div');
-                    card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10 hover:border-yellow-500/30 transition-all";
-                    let buyBtnText = window.currentPlan === 'premium' ? "פרימיום: הפעל סימולציה" : "רכוש חבילה";
-                    card.innerHTML = `
-                        <div class="text-4xl my-3">${pkg.preview}</div>
-                        <h4 class="font-bold text-white text-sm leading-tight">${pkg.name}</h4>
-                        <div class="flex flex-col gap-2 mt-3 w-full">
-                            <button onclick="window.buySMCStore('${pkg.id}')" class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-2 rounded-xl">${buyBtnText} (${pkg.cost})</button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-                return;
-            }
-
+            const container = document.getElementById('shopItemsGrid'); const timerEl = document.getElementById('shopTimerLabel'); if(!container) return; container.innerHTML = '';
+            const week = getWeekNumber(); const daysLeft = getDaysUntilNextWeek(); if(timerEl) timerEl.textContent = `החנות תתעדכן בפריטים חדשים בעוד ${daysLeft} ימים ⏳`;
+            if (activeShopCategory === 'history') { const purchased = window.userData.purchasedItems || []; if (purchased.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 font-bold text-sm">טרם רכשת פריטים בפורטל. 📜</div>`; return; } purchased.forEach(item => { const card = document.createElement('div'); card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10"; card.innerHTML = `<div class="text-4xl my-3">📦</div><h4 class="font-bold text-white text-sm leading-tight">${item.name}</h4><span class="text-xs text-green-400 font-bold mt-2">נרכש בהצלחה ✅</span>`; container.appendChild(card); }); return; }
+            if (activeShopCategory === 'buy_smc') { smcPackages.forEach(pkg => { const card = document.createElement('div'); card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10 hover:border-yellow-500/30 transition-all"; let buyBtnText = window.currentPlan === 'premium' ? "פרימיום: הפעל סימולציה" : "רכוש חבילה"; card.innerHTML = `<div class="text-4xl my-3">${pkg.preview}</div><h4 class="font-bold text-white text-sm leading-tight">${pkg.name}</h4><div class="flex flex-col gap-2 mt-3 w-full"><button onclick="window.buySMCStore('${pkg.id}')" class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-2 rounded-xl">${buyBtnText} (${pkg.cost})</button></div>`; container.appendChild(card); }); return; }
             const index1 = (week * 1) % masterShopPool.length; const index2 = (week * 3) % masterShopPool.length; const index3 = (week * 5) % masterShopPool.length; const index4 = (week * 7) % masterShopPool.length;
             const activeWeekItems = [ masterShopPool[index1], masterShopPool[index2 === index1 ? (index2 + 1) % masterShopPool.length : index2], masterShopPool[index3 === index1 || index3 === index2 ? (index3 + 2) % masterShopPool.length : index3], masterShopPool[index4 === index1 || index4 === index2 || index4 === index3 ? (index4 + 3) % masterShopPool.length : index4] ];
-
             const filteredItems = masterShopPool.filter(item => item.category === activeShopCategory);
-
-            if (filteredItems.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 font-bold text-sm">אין פריטים זמינים בקטגוריה זו כרגע. 🚀</div>`;
-                return;
-            }
-
-            filteredItems.forEach(item => {
-                let isOwned = false;
-                if (item.type === 'banner' || item.type === 'bundle' || item.type === 'rpg_item' || item.type === 'color') {
-                    isOwned = window.userData.unlockedSkins.includes(item.value) || window.userData.unlockedAvatars.includes(item.value);
-                } else if (item.type === 'avatar') {
-                    isOwned = window.userData.unlockedAvatars.includes(item.value);
-                }
-
-                const canAffordSMC = window.userData.smc >= item.costSMC; 
-                const canAffordXP = window.userData.xp >= item.costXP;
-
-                let btnHtml = isOwned ? `<span class="text-xs text-gray-400 font-bold block mt-3">ברשותך 🔓</span>` : `<div class="flex flex-col gap-2 mt-3 w-full"><button onclick="window.buyShopItem('${item.id}', ${item.costSMC}, 'SMC')" class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-2 rounded-xl ${canAffordSMC ? '' : 'opacity-50 cursor-not-allowed'}" ${canAffordSMC ? '' : 'disabled'}>רכוש ב-${item.costSMC} 🪙</button><button onclick="window.buyShopItem('${item.id}', ${item.costXP}, 'XP')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xs py-2 rounded-xl ${canAffordXP ? '' : 'opacity-50 cursor-not-allowed'}" ${canAffordXP ? '' : 'disabled'}>רכוש ב-${item.costXP.toLocaleString()} ✨</button></div>`;
-
-                const card = document.createElement('div'); card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10 hover:border-yellow-500/30 transition-all";
-                card.innerHTML = `<div class="text-4xl my-3">${item.preview}</div><h4 class="font-bold text-white text-sm leading-tight">${item.name}</h4>${btnHtml}`;
-                container.appendChild(card);
-            });
+            if (filteredItems.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 font-bold text-sm">אין פריטים זמינים בקטגוריה זו כרגע. 🚀</div>`; return; }
+            filteredItems.forEach(item => { let isOwned = false; if (item.type === 'banner' || item.type === 'bundle' || item.type === 'rpg_item' || item.type === 'color') { isOwned = window.userData.unlockedSkins.includes(item.value) || window.userData.unlockedAvatars.includes(item.value); } else if (item.type === 'avatar') { isOwned = window.userData.unlockedAvatars.includes(item.value); } const canAffordSMC = window.userData.smc >= item.costSMC; const canAffordXP = window.userData.xp >= item.costXP; let btnHtml = isOwned ? `<span class="text-xs text-gray-400 font-bold block mt-3">ברשותך 🔓</span>` : `<div class="flex flex-col gap-2 mt-3 w-full"><button onclick="window.buyShopItem('${item.id}', ${item.costSMC}, 'SMC')" class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-2 rounded-xl ${canAffordSMC ? '' : 'opacity-50 cursor-not-allowed'}" ${canAffordSMC ? '' : 'disabled'}>רכוש ב-${item.costSMC} 🪙</button><button onclick="window.buyShopItem('${item.id}', ${item.costXP}, 'XP')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xs py-2 rounded-xl ${canAffordXP ? '' : 'opacity-50 cursor-not-allowed'}" ${canAffordXP ? '' : 'disabled'}>רכוש ב-${item.costXP.toLocaleString()} ✨</button></div>`; const card = document.createElement('div'); card.className = "glass-card p-5 text-center flex flex-col justify-between items-center border border-white/10 hover:border-yellow-500/30 transition-all"; card.innerHTML = `<div class="text-4xl my-3">${item.preview}</div><h4 class="font-bold text-white text-sm leading-tight">${item.name}</h4>${btnHtml}`; container.appendChild(card); });
         };
 
         window.buyShopItem = (itemId, cost, currencyType) => {
             const item = masterShopPool.find(i => i.id === itemId); if(!item) return;
-
-            if (currencyType === 'SMC') { if (window.userData.smc < cost) return window.showToast("אין לך מספיק Smart Coins!", true); window.userData.smc -= cost; } 
-            else { if (window.userData.xp < cost) return window.showToast("אין לך מספיק נקודות XP!", true); window.userData.xp -= cost; }
-
-            if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 };
-            if (!window.userData.purchasedItems) window.userData.purchasedItems = [];
-
-            if(item.type === 'banner') { 
-                window.userData.unlockedSkins.push(item.value); window.showToast(`רקע ${item.name} נרכש בהצלחה!`, false); 
-            } else if (item.type === 'avatar') { 
-                window.userData.unlockedAvatars.push(item.value); window.showToast(`אווטאר ${item.name} נרכש בהצלחה!`, false); 
-            } else if (item.type === 'bundle' && item.value === 'progamer') {
-                window.userData.unlockedSkins.push('bundle_progamer'); window.userData.unlockedAvatars.push('😎', '🤓👍'); window.showToast("חבילת Pro Gamer נרכשה בהצלחה! 🎮", false);
-            } else if (item.type === 'color') {
-                window.userData.unlockedSkins.push(item.value); window.showToast(`צבע סקין חדש נפתח: ${item.name}! 🎨`, false);
-            } else if (item.type === 'rpg_item') {
-                window.userData.rpgStats.damage += item.value === 'staff_epic' ? 30 : 15; window.showToast(`רכשת נשק RPG חדש: ${item.name}! ⚔️`, false);
-            } else if (item.type === 'consumable') {
-                if (item.value === 'bubbles_bomb') { window.userData.inventory.bubbles_bombs = (window.userData.inventory.bubbles_bombs || 0) + 1; window.showToast("פצצת מגה נרכשה ל-Smart Bubbles! 💣", false); } 
-                else if (item.value === 'rune_shield') { window.userData.rpgStats.shieldExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000); window.showToast("מגן קוסמי הופעל ל-7 ימים! 🛡️", false); } 
-                else if (item.value === 'potion') { window.userData.inventory.potions = (window.userData.inventory.potions || 0) + 1; window.showToast("שיקוי ריפוי נרכש! 🧪", false); }
-            } else if (item.type === 'rpg_stat') { 
-                if (item.value === 'hp') { window.userData.rpgStats.maxHp += 20; window.userData.rpgStats.hp += 20; } 
-                if (item.value === 'dmg') { window.userData.rpgStats.damage += 10; } 
-                window.showToast(`שדרוג ${item.name} נרכש בהצלחה!`, false); 
-            }
-
-            window.userData.purchasedItems.push({ name: item.name, timestamp: new Date().toISOString() });
-            window.saveUserData(); window.updateUIStats(); window.renderShop(); window.renderGamerCardEditor();
+            if (currencyType === 'SMC') { if (window.userData.smc < cost) return window.showToast("אין לך מספיק Smart Coins!", true); window.userData.smc -= cost; } else { if (window.userData.xp < cost) return window.showToast("אין לך מספיק נקודות XP!", true); window.userData.xp -= cost; }
+            if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 }; if (!window.userData.purchasedItems) window.userData.purchasedItems = [];
+            if(item.type === 'banner') { window.userData.unlockedSkins.push(item.value); window.showToast(`רקע ${item.name} נרכש בהצלחה!`, false); } else if (item.type === 'avatar') { window.userData.unlockedAvatars.push(item.value); window.showToast(`אווטאר ${item.name} נרכש בהצלחה!`, false); } else if (item.type === 'bundle' && item.value === 'progamer') { window.userData.unlockedSkins.push('bundle_progamer'); window.userData.unlockedAvatars.push('😎', '🤓👍'); window.showToast("חבילת Pro Gamer נרכשה בהצלחה! 🎮", false); } else if (item.type === 'color') { window.userData.unlockedSkins.push(item.value); window.showToast(`צבע סקין חדש נפתח: ${item.name}! 🎨`, false); } else if (item.type === 'rpg_item') { window.userData.rpgStats.damage += item.value === 'staff_epic' ? 30 : 15; window.showToast(`רכשת נשק RPG חדש: ${item.name}! ⚔️`, false); } else if (item.type === 'consumable') { if (item.value === 'bubbles_bomb') { window.userData.inventory.bubbles_bombs = (window.userData.inventory.bubbles_bombs || 0) + 1; window.showToast("פצצת מגה נרכשה ל-Smart Bubbles! 💣", false); } else if (item.value === 'rune_shield') { window.userData.rpgStats.shieldExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000); window.showToast("מגן קוסמי הופעל ל-7 ימים! 🛡️", false); } else if (item.value === 'potion') { window.userData.inventory.potions = (window.userData.inventory.potions || 0) + 1; window.showToast("שיקוי ריפוי נרכש! 🧪", false); } } else if (item.type === 'rpg_stat') { if (item.value === 'hp') { window.userData.rpgStats.maxHp += 20; window.userData.rpgStats.hp += 20; } if (item.value === 'dmg') { window.userData.rpgStats.damage += 10; } window.showToast(`שדרוג ${item.name} נרכש בהצלחה!`, false); }
+            window.userData.purchasedItems.push({ name: item.name, timestamp: new Date().toISOString() }); window.saveUserData(); window.updateUIStats(); window.renderShop(); window.renderGamerCardEditor();
         };
 
-        window.buySMCStore = (packageId) => {
-            const pkg = smcPackages.find(p => p.id === packageId); if(!pkg) return;
-            window.userData.smc += pkg.coins; window.showToast(`רכשת בהצלחה ${pkg.coins} SMC! 💰✨`, false);
-            if (!window.userData.purchasedItems) window.userData.purchasedItems = []; window.userData.purchasedItems.push({ name: `חבילת SMC: +${pkg.coins}`, timestamp: new Date().toISOString() });
-            window.saveUserData(); window.updateUIStats(); window.renderShop();
-        };
+        window.buySMCStore = (packageId) => { const pkg = smcPackages.find(p => p.id === packageId); if(!pkg) return; window.userData.smc += pkg.coins; window.showToast(`רכשת בהצלחה ${pkg.coins} SMC! 💰✨`, false); if (!window.userData.purchasedItems) window.userData.purchasedItems = []; window.userData.purchasedItems.push({ name: `חבילת SMC: +${pkg.coins}`, timestamp: new Date().toISOString() }); window.saveUserData(); window.updateUIStats(); window.renderShop(); };
 
-        // --- Netflix Banner ---
-        window.toggleFavoriteGame = (gameId) => {
-            if(!window.userData.favorites) window.userData.favorites = [];
-            if (window.userData.favorites.includes(gameId)) { window.userData.favorites = window.userData.favorites.filter(g => g !== gameId); window.showToast("הוסר ממועדפים", false); } 
-            else { window.userData.favorites.push(gameId); window.showToast("נוסף למועדפים שלך! ❤️", false); }
-            window.saveUserData(); window.updateUIStats();
-        };
-
-        window.updateFavoriteIcons = () => {
-            const favs = window.userData.favorites || [];
-            ['rune', 'quiz', 'bubbles', 'snake', 'tictactoe'].forEach(id => {
-                const btn = document.getElementById(`favBtn_${id}`);
-                if (btn) btn.innerHTML = favs.includes(id) ? `<i data-lucide="heart" class="w-4 h-4 text-red-500 fill-red-500"></i>` : `<i data-lucide="heart" class="w-4 h-4 text-gray-400"></i>`;
-            });
-            lucide.createIcons();
-        };
-
+        // --- Favorites & Netflix Banner ---
+        window.toggleFavoriteGame = (gameId) => { if(!window.userData.favorites) window.userData.favorites = []; if (window.userData.favorites.includes(gameId)) { window.userData.favorites = window.userData.favorites.filter(g => g !== gameId); window.showToast("הוסר ממועדפים", false); } else { window.userData.favorites.push(gameId); window.showToast("נוסף למועדפים שלך! ❤️", false); } window.saveUserData(); window.updateUIStats(); };
+        window.updateFavoriteIcons = () => { const favs = window.userData.favorites || []; ['rune', 'quiz', 'bubbles', 'snake', 'tictactoe'].forEach(id => { const btn = document.getElementById(`favBtn_${id}`); if (btn) btn.innerHTML = favs.includes(id) ? `<i data-lucide="heart" class="w-4 h-4 text-red-500 fill-red-500"></i>` : `<i data-lucide="heart" class="w-4 h-4 text-gray-400"></i>`; }); lucide.createIcons(); };
         window.renderNetflixBanner = () => {
-            const banner = document.getElementById('netflixRecommendationBanner');
-            if(!banner) return;
-            const favs = window.userData.favorites || []; let recommendId = "rune"; 
-            if (favs.includes('snake') || favs.includes('tictactoe')) { recommendId = "quiz"; } else if (favs.includes('bubbles')) { recommendId = "rune"; } else if (favs.length > 0) { recommendId = favs[0]; }
-
-            const details = {
-                rune: { title: "Rune Quest 3D", desc: "המשחק התלת-ממדי המוביל בפורטל! בחר גיבור, חקור את ההרים הפראיים, וזכה ברולטת השדרוגים!", img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop", action: () => window.checkPremiumAccess('rune') },
-                quiz: { title: "Smart Quiz Ultimate", desc: "זירת הקרב המרובת משתתפים של אדנים! שחק מול חברים אונליין בעזרת קוד חדר ייחודי או נצח בטורניר המונדיאל הגדול!", img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop", action: () => window.openQuizLobby() },
-                bubbles: { title: "Smart Bubbles", desc: "משחק פאזל מהיר וממכר! פוצץ שרשראות בועות תואמות כדי ליצור פיצוצי ענק ולזכות ב-Smart Coins לחנות!", img: "https://images.unsplash.com/photo-1559251606-c623743a6d76?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('bubbles') },
-                snake: { title: "Smart Snake", desc: "קלאסיקת הנחש המעודכנת של Smart App Company! אסוף תפוחים ואכול את הדרך שלך לראש טבלת המובילים!", img: "https://images.unsplash.com/photo-1515462277126-270d878326e5?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('snake') },
-                tictactoe: { title: "Tic-Tac-Toe AI", desc: "איקס עיגול חכם מול מחשב בינה מלאכותית או ראש בראש מול חברים. חשיבה אסטרטגית מהירה וכיפית!", img: "https://images.unsplash.com/photo-1611195974226-a6a9be9dd763?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('tictactoe') }
-            };
-
+            const banner = document.getElementById('netflixRecommendationBanner'); if(!banner) return;
+            const favs = window.userData.favorites || []; let recommendId = "rune"; if (favs.includes('snake') || favs.includes('tictactoe')) { recommendId = "quiz"; } else if (favs.includes('bubbles')) { recommendId = "rune"; } else if (favs.length > 0) { recommendId = favs[0]; }
+            const details = { rune: { title: "Rune Quest 3D", desc: "המשחק התלת-ממדי המוביל בפורטל! בחר גיבור, חקור את ההרים הפראיים, וזכה ברולטת השדרוגים!", img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop", action: () => window.checkPremiumAccess('rune') }, quiz: { title: "Smart Quiz Ultimate", desc: "זירת הקרב המרובת משתתפים של אדנים! שחק מול חברים אונליין בעזרת קוד חדר ייחודי או נצח בטורניר המונדיאל הגדול!", img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop", action: () => window.openQuizLobby() }, bubbles: { title: "Smart Bubbles", desc: "משחק פאזל מהיר וממכר! פוצץ שרשראות בועות תואמות כדי ליצור פיצוצי ענק ולזכות ב-Smart Coins לחנות!", img: "https://images.unsplash.com/photo-1559251606-c623743a6d76?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('bubbles') }, snake: { title: "Smart Snake", desc: "קלאסיקת הנחש המעודכנת של Smart App Company! אסוף תפוחים ואכול את הדרך שלך לראש טבלת המובילים!", img: "https://images.unsplash.com/photo-1515462277126-270d878326e5?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('snake') }, tictactoe: { title: "Tic-Tac-Toe AI", desc: "איקס עיגול חכם מול מחשב בינה מלאכותית או ראש בראש מול חברים. חשיבה אסטרטגית מהירה וכיפית!", img: "https://images.unsplash.com/photo-1611195974226-a6a9be9dd763?q=80&w=400&auto=format&fit=crop", action: () => window.openGame('tictactoe') } };
             const rec = details[recommendId] || details.rune;
-            document.getElementById('netflixHeroTitle').innerHTML = `${rec.title} <span class="text-red-500 font-extrabold text-base tracking-widest align-middle mr-2">מומלץ</span>`;
-            document.getElementById('netflixHeroDesc').textContent = rec.desc;
-            document.getElementById('netflixMatchPercent').textContent = `${Math.floor(Math.random() * 5) + 95}% התאמה עבורך`;
-            document.getElementById('netflixHeroImg').style.backgroundImage = `url('${rec.img}')`;
-            document.getElementById('netflixPlayBtn').onclick = rec.action;
-            banner.classList.remove('hidden');
+            document.getElementById('netflixHeroTitle').innerHTML = `${rec.title} <span class="text-red-500 font-extrabold text-base tracking-widest align-middle mr-2">מומלץ</span>`; document.getElementById('netflixHeroDesc').textContent = rec.desc; document.getElementById('netflixMatchPercent').textContent = `${Math.floor(Math.random() * 5) + 95}% התאמה עבורך`; document.getElementById('netflixHeroImg').style.backgroundImage = `url('${rec.img}')`; document.getElementById('netflixPlayBtn').onclick = rec.action; banner.classList.remove('hidden');
         };
 
         // --- Navigation ---
         window.switchSection = (section) => {
             ['tabFree', 'tabQuests', 'tabCard', 'tabPass', 'tabShop', 'tabPremium'].forEach(id => { const btn = document.getElementById(id); if (btn) btn.classList.remove('active'); });
-            const activeBtn = document.getElementById(`tab${section.charAt(0).toUpperCase() + section.slice(1)}`);
-            if (activeBtn) activeBtn.classList.add('active');
-
+            const activeBtn = document.getElementById(`tab${section.charAt(0).toUpperCase() + section.slice(1)}`); if (activeBtn) activeBtn.classList.add('active');
             ['freeGamesSection', 'questsSection', 'cardSection', 'passSection', 'shopSection', 'premiumGamesSection'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
-
-            if (section === 'free') { const sec = document.getElementById('freeGamesSection'); if (sec) sec.classList.remove('hidden'); window.renderNetflixBanner(); }
-            else if (section === 'quests') { const sec = document.getElementById('questsSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderQuests(); }
-            else if (section === 'card') { const sec = document.getElementById('cardSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderGamerCardEditor(); }
-            else if (section === 'pass') { const sec = document.getElementById('passSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderPass(); }
-            else if (section === 'shop') { const sec = document.getElementById('shopSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.setShopCategory('skins'); }
-            else if (section === 'premium') { const sec = document.getElementById('premiumGamesSection'); if (sec) sec.classList.remove('hidden'); }
+            if (section === 'free') { const sec = document.getElementById('freeGamesSection'); if (sec) sec.classList.remove('hidden'); window.renderNetflixBanner(); } else if (section === 'quests') { const sec = document.getElementById('questsSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderQuests(); } else if (section === 'card') { const sec = document.getElementById('cardSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderGamerCardEditor(); } else if (section === 'pass') { const sec = document.getElementById('passSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.renderPass(); } else if (section === 'shop') { const sec = document.getElementById('shopSection'); if (sec) { sec.classList.remove('hidden'); sec.classList.add('flex'); } window.setShopCategory('skins'); } else if (section === 'premium') { const sec = document.getElementById('premiumGamesSection'); if (sec) sec.classList.remove('hidden'); }
         };
 
         window.checkPremiumAccess = (game) => { if (window.currentPlan === 'premium') { window.openGame(game); } else { const upsell = document.getElementById('upsellModal'); if (upsell) upsell.classList.remove('hidden'); } };
+        window.openGame = (gameId) => { window.showGameLoader(gameId, () => { if(gameId === 'snake') { const m = document.getElementById('gameSnakeModal'); if(m) m.classList.remove('hidden'); window.resetSnake(); } else if(gameId === 'tictactoe') { const m = document.getElementById('gameTttModal'); if(m) m.classList.remove('hidden'); window.resetTtt(); } else if(gameId === 'bubbles') { const m = document.getElementById('gameBubblesModal'); if(m) m.classList.remove('hidden'); window.resetBubbles(); } else if(gameId === 'racing') { const m = document.getElementById('gameRacingModal'); if(m) m.classList.remove('hidden'); window.resetRacing(); } else if(gameId === 'rune') { const m = document.getElementById('gameRuneModal'); if(m) m.classList.remove('hidden'); window.resetRune3D(); } }); };
+        window.closeGame = (gameId) => { if(gameId === 'snake') { const m = document.getElementById('gameSnakeModal'); if(m) m.classList.add('hidden'); clearInterval(window.snakeGameLoop); } else if(gameId === 'tictactoe') { const m = document.getElementById('gameTttModal'); if(m) m.classList.add('hidden'); } else if(gameId === 'bubbles') { const m = document.getElementById('gameBubblesModal'); if(m) m.classList.add('hidden'); } else if(gameId === 'racing') { const m = document.getElementById('gameRacingModal'); if(m) m.classList.add('hidden'); clearInterval(window.racingInterval); } else if(gameId === 'rune') { const m = document.getElementById('gameRuneModal'); if(m) m.classList.add('hidden'); if(window.runeAnimId) cancelAnimationFrame(window.runeAnimId); } };
+        window.showGameLoader = (gameId, callback) => { const loader = document.getElementById('gameLoader'); const barFill = document.getElementById('gameProgressBarFill'); if(barFill) { barFill.style.transition = 'none'; barFill.style.width = '0%'; } if(loader) { loader.classList.remove('hidden'); loader.classList.add('flex'); setTimeout(() => { loader.style.opacity = '1'; }, 10); } setTimeout(() => { if(barFill) { barFill.style.transition = 'width 1s linear'; barFill.style.width = '100%'; } }, 50); setTimeout(() => { if(loader) { loader.style.opacity = '0'; setTimeout(() => { loader.classList.add('hidden'); loader.classList.remove('flex'); if(callback) callback(); }, 500); } else { if(callback) callback(); } }, 1200); };
 
-        // --- הוספת פונקציות פתיחת וסגירת חלונות של המשחקים ---
-        window.openGame = (gameId) => {
-            const loader = document.getElementById('gameLoader'); const barFill = document.getElementById('gameProgressBarFill'); const text = document.getElementById('gameLoaderText');
-            if(loader) { loader.classList.remove('hidden'); loader.classList.add('flex'); loader.style.opacity = '1'; }
-            if(barFill) { barFill.style.transition = 'none'; barFill.style.width = '0%'; setTimeout(()=>{ barFill.style.transition = 'width 1s linear'; barFill.style.width = '100%'; }, 50);}
-            
+        // --- 🐍 מנוע הסנייק עם אתגרים כל 100 נקודות ---
+        window.resetSnake = () => { 
+            snake.x=150; snake.y=150; snake.cells=[]; snake.maxCells=4; snake.dx=grid; snake.dy=0; score=0; 
+            currentSnakeSpeed = snakeBaseSpeed; lastMilestone = 0; goldenApple = null; frenzyApples = []; speedBuffRemaining = 0;
+            const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; 
+            apple.x=Math.floor(Math.random()*20)*grid; apple.y=Math.floor(Math.random()*20)*grid; 
+            if(sCtx) sCtx.clearRect(0,0,sCanvas.width,sCanvas.height); 
+            const btnSnake = document.getElementById('btnStartSnake'); if (btnSnake) btnSnake.style.display='block'; 
+        };
+        
+        window.startSnakeGame = () => { 
+            const btnSnake = document.getElementById('btnStartSnake'); if (btnSnake) btnSnake.style.display='none'; 
+            window.resetSnake(); 
+            if(window.snakeGameLoop) clearInterval(window.snakeGameLoop); 
+            window.snakeGameLoop = setInterval(sLoop, currentSnakeSpeed); 
+        };
+
+        function showSnakeEventToast(msg) {
+            const toast = document.getElementById('snakeEventToast');
+            if(!toast) return;
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100', 'scale-110');
             setTimeout(() => {
-                if(loader) { loader.style.opacity = '0'; setTimeout(()=> { loader.classList.add('hidden'); loader.classList.remove('flex'); }, 500); }
-                if(gameId === 'snake') { const m = document.getElementById('gameSnakeModal'); if(m) m.classList.remove('hidden'); window.resetSnake(); }
-                else if(gameId === 'tictactoe') { const m = document.getElementById('gameTttModal'); if(m) m.classList.remove('hidden'); window.resetTtt(); }
-                else if(gameId === 'bubbles') { const m = document.getElementById('gameBubblesModal'); if(m) m.classList.remove('hidden'); window.resetBubbles(); }
-                else if(gameId === 'racing') { const m = document.getElementById('gameRacingModal'); if(m) m.classList.remove('hidden'); window.resetRacing(); }
-                else if(gameId === 'rune') { const m = document.getElementById('gameRuneModal'); if(m) m.classList.remove('hidden'); window.resetRune3D(); }
-            }, 1200);
-        };
+                toast.classList.remove('opacity-100', 'scale-110');
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
 
-        window.closeGame = (gameId) => {
-            if(gameId === 'snake') { const m = document.getElementById('gameSnakeModal'); if(m) m.classList.add('hidden'); clearInterval(window.snakeGameLoop); }
-            else if(gameId === 'tictactoe') { const m = document.getElementById('gameTttModal'); if(m) m.classList.add('hidden'); }
-            else if(gameId === 'bubbles') { const m = document.getElementById('gameBubblesModal'); if(m) m.classList.add('hidden'); }
-            else if(gameId === 'racing') { const m = document.getElementById('gameRacingModal'); if(m) m.classList.add('hidden'); clearInterval(window.racingInterval); }
-            else if(gameId === 'rune') { const m = document.getElementById('gameRuneModal'); if(m) m.classList.add('hidden'); if(window.runeAnimId) cancelAnimationFrame(window.runeAnimId); }
-        };
-
-        // --- חידון מרובה משתתפים ---
-        window.openQuizLobby = () => { document.getElementById('mainMenuArea').classList.add('hidden'); document.getElementById('quizAppArea').classList.remove('hidden'); document.getElementById('quizAppArea').classList.add('flex'); window.showQuizScreen('quizMainMenu'); };
-        window.closeQuizLobby = () => { if(window.roomUnsubscribe) window.roomUnsubscribe(); clearInterval(window.timerInterval); document.getElementById('quizAppArea').classList.add('hidden'); document.getElementById('quizAppArea').classList.remove('flex'); document.getElementById('mainMenuArea').classList.remove('hidden'); };
-        window.showQuizScreen = (screenId) => { ['quizMainMenu', 'quizLobbyArea', 'knockoutBracketArea', 'quizActiveGameArea', 'quizResultsArea'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('hidden'); el.classList.remove('flex'); } }); const target = document.getElementById(screenId); if (target) { target.classList.remove('hidden'); target.classList.add('flex'); } };
-        window.startKnockoutMode = () => { window.activeGameMode = 'knockout'; window.koStage = 0; window.updateKnockoutBracket(); window.showQuizScreen('knockoutBracketArea'); };
-        window.updateKnockoutBracket = () => { const fillWidth = (window.koStage / 3) * 100; const fillEl = document.getElementById('bracketLineFill'); if (fillEl) fillEl.style.width = `${fillWidth}%`; for(let i=0; i<=3; i++) { const stageEl = document.getElementById(`stage_${i}`); if(stageEl && i <= window.koStage) { stageEl.classList.add('active'); const circle = stageEl.querySelector('div'); if (circle) { circle.classList.replace('border-gray-600', 'border-green-500'); circle.classList.replace('bg-gray-800', 'bg-green-900'); } } } const vsOpp = document.getElementById('vsOpponentName'); if (vsOpp) vsOpp.textContent = `אתה נגד: ${window.koOpponents ? window.koOpponents[window.koStage] : 'הבוס'}`; };
-        window.startKnockoutRound = () => { window.showGameLoader('knockout', () => { window.quizScore = 0; window.currentQIndex = 0; window.showQuizScreen('quizActiveGameArea'); const hostCtrl = document.getElementById('hostControls'); if (hostCtrl) hostCtrl.classList.add('hidden'); window.renderCurrentQuestion(); }); };
-        window.showGameLoader = (gameId, callback) => { const loader = document.getElementById('gameLoader'); const barFill = document.getElementById('gameProgressBarFill'); if (barFill) { barFill.style.transition = 'none'; barFill.style.width = '0%'; } if (loader) { loader.classList.remove('hidden'); loader.classList.add('flex'); setTimeout(() => { loader.style.opacity = '1'; }, 10); } setTimeout(() => { if (barFill) { barFill.style.transition = 'width 2s linear'; barFill.style.width = '100%'; } }, 50); setTimeout(() => { if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.classList.add('hidden'); loader.classList.remove('flex'); if (callback) callback(); }, 500); } else { if (callback) callback(); } }, 1500); };
-
-        // --- אימות ואדמין ---
-        window.renderAdminTools = () => {
-            let adminBtn = document.getElementById('adminTestBtn'); window.isManager = false; const user = auth.currentUser;
-            if(user && !user.isAnonymous) {
-                const currentAppId = typeof window.appId !== 'undefined' ? window.appId : appId;
-                getDocs(query(collection(db, "artifacts", currentAppId, "users", user.uid, "user_profiles"))).then(snap => {
-                    snap.forEach(d => { if(d.data().isManager) window.isManager = true; });
-                    if(window.isManager) {
-                        if (!adminBtn) { adminBtn = document.createElement('button'); adminBtn.id = 'adminTestBtn'; adminBtn.className = "fixed bottom-10 right-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.5)] z-[9999] border-2 border-white/20 transition-all flex items-center gap-2"; adminBtn.onclick = window.toggleAdminPlan; document.body.appendChild(adminBtn); }
-                        adminBtn.innerHTML = `<i data-lucide="crown" class="w-5 h-5"></i> אדמין: ${window.currentPlan === 'premium' ? 'Premium (פתוח)' : 'Free (נעול)'}`; adminBtn.style.display = 'flex'; if(window.lucide) lucide.createIcons();
-                    } else if (adminBtn) { adminBtn.style.display = 'none'; }
-                });
-            } else if (adminBtn) { adminBtn.style.display = 'none'; }
-        };
-
-        window.toggleAdminPlan = () => { window.currentPlan = window.currentPlan === 'free' ? 'premium' : 'free'; window.renderAdminTools(); window.showToast(`התוכנית שונתה ל-${window.currentPlan.toUpperCase()}`, false); };
-        window.openModal = () => { const authMod = document.getElementById('authModal'); if (authMod) authMod.classList.remove('hidden'); window.showForm('choice'); };
-        window.closeModal = () => { const authMod = document.getElementById('authModal'); if (authMod) authMod.classList.add('hidden'); };
-        window.showForm = (type) => { ['authChoice', 'registerForm', 'loginForm'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }); const targetForm = document.getElementById(type === 'choice' ? 'authChoice' : type === 'register' ? 'registerForm' : 'loginForm'); if (targetForm) targetForm.classList.remove('hidden'); };
-
-        window.submitLogin = async () => {
-            const emailInput = document.getElementById('loginEmail'); const passInput = document.getElementById('loginPassword'); const email = emailInput ? emailInput.value.trim().toLowerCase() : ""; const pass = passInput ? passInput.value : "";
-            if(!email || !pass) return window.showToast("נא להזין אימייל וסיסמה", true);
-            const btn = document.getElementById('loginSubmitBtn'); if(btn) { btn.disabled = true; btn.innerHTML = '<span class="loader"></span> מתחבר...'; }
-            try { await signInWithEmailAndPassword(auth, email, pass); localStorage.setItem('shoval_simulated_logout', 'false'); window.showToast("התחברת בהצלחה ל-Smart Gaming!", false); window.closeModal(); } 
-            catch (e) { console.error(e); window.showToast("אימייל או סיסמה שגויים.", true); } finally { if (btn) { btn.disabled = false; btn.textContent = "כניסה"; } }
-        };
-
-        window.submitRegister = async () => {
-            const nameInput = document.getElementById('regDisplayName'); const emailInput = document.getElementById('regEmail'); const passInput = document.getElementById('regPassword');
-            const name = nameInput ? nameInput.value.trim() : ""; const email = emailInput ? emailInput.value.trim().toLowerCase() : ""; const pass = passInput ? passInput.value : "";
-            if(!name || !email || !pass) return window.showToast("נא למלא את כל השדות", true);
-            const btn = document.getElementById('regSubmitBtn'); if(btn) { btn.disabled = true; btn.innerHTML = '<span class="loader"></span> נרשם...'; }
-            try { const cred = await createUserWithEmailAndPassword(auth, email, pass); const profileRef = doc(collection(db, "artifacts", appId, "users", cred.user.uid, "user_profiles")); await setDoc(profileRef, { id: profileRef.id, displayName: name, isMinor: false, isManager: false, createdAt: new Date().toISOString() }); localStorage.setItem('shoval_simulated_logout', 'false'); window.showToast("חשבון השחקן נוצר בהצלחה!", false); window.closeModal(); } 
-            catch(e) { console.error(e); window.showToast("שגיאה ברישום החשבון", true); } finally { if(btn) { btn.disabled = false; btn.textContent = "צור חשבון"; } }
-        };
-
-        window.handleLogout = async () => { try { await signOut(auth); localStorage.setItem('shoval_simulated_logout', 'true'); window.showToast("התנתקת מחשבון השחקן.", false); } catch (e) { console.error(e); } };
-
-        onAuthStateChanged(auth, async (user) => {
-            const isLogout = localStorage.getItem('shoval_simulated_logout') === 'true';
-            const authBtnEl = document.getElementById('authBtn'); const logoutBtnEl = document.getElementById('logoutBtn'); const userNameEl = document.getElementById('navGamerTag');
-            if (user && !user.isAnonymous && !isLogout) {
-                if (authBtnEl) authBtnEl.classList.add('hidden'); if (logoutBtnEl) logoutBtnEl.classList.remove('hidden'); if (userNameEl) userNameEl.textContent = user.email.split('@')[0];
-                try { const profilesRef = collection(db, "artifacts", appId, "users", user.uid, "user_profiles"); const snap = await getDocs(query(profilesRef)); let isPremium = false; snap.forEach(d => { if (d.data().beta_tester || d.data().isManager) isPremium = true; }); if (isPremium || localStorage.getItem('smart_plan') === 'premium') window.currentPlan = 'premium'; } catch(e) {}
-                window.loadUserData(user); window.renderAdminTools();
-            } else {
-                if (authBtnEl) authBtnEl.classList.remove('hidden'); if (logoutBtnEl) logoutBtnEl.classList.add('hidden'); if (userNameEl) userNameEl.textContent = "אורח"; window.currentPlan = 'free'; window.renderAdminTools();
-                if (!user) { try { await signInAnonymously(auth); } catch(e){ console.error(e); } }
-                if (window.updateUIStats) window.updateUIStats();
+        function triggerMilestoneEvent() {
+            const events = ['gold', 'frenzy', 'speed'];
+            const ev = events[Math.floor(Math.random() * events.length)];
+            
+            if (ev === 'gold') {
+                goldenApple = {
+                    x: Math.floor(Math.random()*20)*grid, 
+                    y: Math.floor(Math.random()*20)*grid, 
+                    timer: 50 // 50 פריימים של חיי התפוח
+                };
+                showSnakeEventToast("⭐ תפוח זהב הופיע! תפוס אותו מהר!");
+            } else if (ev === 'frenzy') {
+                frenzyApples = [
+                    {x: Math.floor(Math.random()*20)*grid, y: Math.floor(Math.random()*20)*grid},
+                    {x: Math.floor(Math.random()*20)*grid, y: Math.floor(Math.random()*20)*grid},
+                    {x: Math.floor(Math.random()*20)*grid, y: Math.floor(Math.random()*20)*grid}
+                ];
+                showSnakeEventToast("🍎🍎 מכת תפוחים! חגיגת נקודות!");
+            } else if (ev === 'speed') {
+                currentSnakeSpeed = 60; // 40% מהיר יותר
+                speedBuffRemaining = 3; // יחזיק עד שיאכל 3 תפוחים
+                clearInterval(window.snakeGameLoop);
+                window.snakeGameLoop = setInterval(sLoop, currentSnakeSpeed);
+                showSnakeEventToast("⚡ אתגר מהירות! תחזיק מעמד!");
             }
-        });
+        }
 
-        // --- Games Logic Implementations ---
-        window.resetSnake = () => { snake.x=150; snake.y=150; snake.cells=[]; snake.maxCells=4; snake.dx=grid; snake.dy=0; score=0; const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; apple.x=Math.floor(Math.random()*20)*grid; apple.y=Math.floor(Math.random()*20)*grid; if(sCtx) sCtx.clearRect(0,0,sCanvas.width,sCanvas.height); const btnSnake = document.getElementById('btnStartSnake'); if (btnSnake) btnSnake.style.display='block'; };
-        window.startSnakeGame = () => { const btnSnake = document.getElementById('btnStartSnake'); if (btnSnake) btnSnake.style.display='none'; window.resetSnake(); if(window.snakeGameLoop) clearInterval(window.snakeGameLoop); window.snakeGameLoop = setInterval(sLoop, 100); };
         function sLoop() {
-            if(!sCtx) return; sCtx.clearRect(0,0,sCanvas.width,sCanvas.height);
+            if(!sCtx) return; 
+            sCtx.clearRect(0,0,sCanvas.width,sCanvas.height);
+            
+            // תנועה וגבולות
             if(window.snakeDir==='LEFT' && snake.dx===0){snake.dx=-grid; snake.dy=0;} else if(window.snakeDir==='UP' && snake.dy===0){snake.dy=-grid; snake.dx=0;} else if(window.snakeDir==='RIGHT' && snake.dx===0){snake.dx=grid; snake.dy=0;} else if(window.snakeDir==='DOWN' && snake.dy===0){snake.dy=grid; snake.dx=0;}
-            snake.x+=snake.dx; snake.y+=snake.dy; if(snake.x<0) snake.x=sCanvas.width-grid; else if(snake.x>=sCanvas.width) snake.x=0; if(snake.y<0) snake.y=sCanvas.height-grid; else if(snake.y>=sCanvas.height) snake.y=0;
-            snake.cells.unshift({x:snake.x, y:snake.y}); if(snake.cells.length>snake.maxCells) snake.cells.pop();
-            sCtx.fillStyle='#ef4444'; sCtx.fillRect(apple.x, apple.y, grid-1, grid-1);
-            if(window.userData.activeSkin === 'skin_gold') sCtx.fillStyle = '#eab308'; else if(window.userData.activeSkin === 'skin_fire') sCtx.fillStyle = '#f97316'; else if(window.userData.activeSkin === 'neon_green' || window.userData.activeSkin === 'color_neon_green') sCtx.fillStyle = '#22c55e'; else if(window.userData.activeSkin === 'cyber_violet' || window.userData.activeSkin === 'color_cyber_violet') sCtx.fillStyle = '#a855f7'; else sCtx.fillStyle = '#22c55e';
-            snake.cells.forEach(function(cell, index) { sCtx.fillRect(cell.x, cell.y, grid-1, grid-1); if(cell.x===apple.x && cell.y===apple.y){ snake.maxCells++; score+=10; const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; apple.x=Math.floor(Math.random()*20)*grid; apple.y=Math.floor(Math.random()*20)*grid; window.rewardPlayer(50, 10); window.logGamePlay("Smart Snake", score); } for(let i=index+1; i<snake.cells.length; i++){ if(cell.x===snake.cells[i].x && cell.y===snake.cells[i].y){ window.showToast("נפסלת! הניקוד שלך: " + score, true); clearInterval(window.snakeGameLoop); const btnSnake = document.getElementById('btnStartSnake'); if (btnSnake) { btnSnake.style.display='block'; btnSnake.textContent='שחק שוב'; } } } });
+            snake.x+=snake.dx; snake.y+=snake.dy; 
+            if(snake.x<0) snake.x=sCanvas.width-grid; else if(snake.x>=sCanvas.width) snake.x=0; 
+            if(snake.y<0) snake.y=sCanvas.height-grid; else if(snake.y>=sCanvas.height) snake.y=0;
+            
+            snake.cells.unshift({x:snake.x, y:snake.y}); 
+            if(snake.cells.length>snake.maxCells) snake.cells.pop();
+            
+            // ציור תפוח רגיל (אדום)
+            sCtx.fillStyle='#ef4444'; 
+            sCtx.fillRect(apple.x, apple.y, grid-1, grid-1);
+
+            // ציור תפוח זהב (אם קיים)
+            if (goldenApple) {
+                sCtx.fillStyle = (goldenApple.timer % 4 < 2) ? '#facc15' : '#ffffff'; // הבהוב
+                sCtx.fillRect(goldenApple.x, goldenApple.y, grid-1, grid-1);
+                goldenApple.timer--;
+                if (goldenApple.timer <= 0) goldenApple = null; // נעלם אם לא נאכל
+            }
+
+            // ציור מכת תפוחים (Frenzy)
+            if (frenzyApples.length > 0) {
+                sCtx.fillStyle = '#f87171'; // אדום בהיר
+                frenzyApples.forEach(fa => sCtx.fillRect(fa.x, fa.y, grid-1, grid-1));
+            }
+
+            // צבע הנחש (לפי סקינים בחנות)
+            if(window.userData.activeSkin === 'skin_gold') sCtx.fillStyle = '#eab308'; 
+            else if(window.userData.activeSkin === 'skin_fire') sCtx.fillStyle = '#f97316'; 
+            else if(window.userData.activeSkin === 'neon_green' || window.userData.activeSkin === 'color_neon_green') sCtx.fillStyle = '#22c55e'; 
+            else if(window.userData.activeSkin === 'cyber_violet' || window.userData.activeSkin === 'color_cyber_violet') sCtx.fillStyle = '#a855f7'; 
+            else sCtx.fillStyle = '#22c55e'; // ירוק ברירת מחדל
+            
+            snake.cells.forEach(function(cell, index) {
+                sCtx.fillRect(cell.x, cell.y, grid-1, grid-1);
+                
+                // בדיקת אכילת תפוח רגיל
+                if(cell.x===apple.x && cell.y===apple.y){ 
+                    snake.maxCells++; score+=10; 
+                    const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; 
+                    apple.x=Math.floor(Math.random()*20)*grid; apple.y=Math.floor(Math.random()*20)*grid; 
+                    window.rewardPlayer(10, 2); 
+                    
+                    if (speedBuffRemaining > 0) {
+                        speedBuffRemaining--;
+                        if (speedBuffRemaining <= 0) {
+                            currentSnakeSpeed = snakeBaseSpeed;
+                            clearInterval(window.snakeGameLoop);
+                            window.snakeGameLoop = setInterval(sLoop, currentSnakeSpeed);
+                            showSnakeEventToast("המהירות חזרה לרגיל 😌");
+                        }
+                    }
+                }
+
+                // בדיקת אכילת תפוח זהב
+                if(goldenApple && cell.x===goldenApple.x && cell.y===goldenApple.y){
+                    snake.maxCells += 2; score += 30;
+                    goldenApple = null;
+                    const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; 
+                    window.rewardPlayer(50, 20); // בונוס שווה במיוחד
+                    window.showToast("אכלת תפוח זהב! +30 נקודות ו-+20 SMC!", false);
+                }
+
+                // בדיקת אכילת תפוחי Frenzy
+                if(frenzyApples.length > 0) {
+                    for(let i = 0; i < frenzyApples.length; i++) {
+                        if(cell.x === frenzyApples[i].x && cell.y === frenzyApples[i].y) {
+                            snake.maxCells++; score += 10;
+                            frenzyApples.splice(i, 1);
+                            const sScore = document.getElementById('snakeScore'); if (sScore) sScore.textContent=score; 
+                            window.rewardPlayer(10, 2);
+                            break;
+                        }
+                    }
+                }
+
+                // בדיקת פסילה (פגיעה בעצמי)
+                for(let i=index+1; i<snake.cells.length; i++){ 
+                    if(cell.x===snake.cells[i].x && cell.y===snake.cells[i].y){ 
+                        window.showToast("נפסלת! הניקוד שלך: " + score, true); 
+                        clearInterval(window.snakeGameLoop); 
+                        window.logGamePlay("Smart Snake", score);
+                        const btnSnake = document.getElementById('btnStartSnake'); 
+                        if (btnSnake) { btnSnake.style.display='block'; btnSnake.textContent='שחק שוב'; } 
+                    } 
+                } 
+            });
+
+            // בדיקת קפיצת מדרגה (Milestone)
+            if (score > 0 && score % 100 === 0 && score !== lastMilestone) {
+                lastMilestone = score;
+                triggerMilestoneEvent();
+            }
         }
         document.addEventListener('keydown', function(e) { if(e.which===37 && snake.dx===0) window.snakeDir='LEFT'; else if(e.which===38 && snake.dy===0) window.snakeDir='UP'; else if(e.which===39 && snake.dx===0) window.snakeDir='RIGHT'; else if(e.which===40 && snake.dy===0) window.snakeDir='DOWN'; });
 
-        window.resetTtt = () => { tttBoard = ['','','','','','','','','']; tttPlayer = 'X'; tttActive = true; const stat = document.getElementById('tttStatus'); if (stat) stat.textContent = `תור שחקן: ${tttPlayer}`; document.querySelectorAll('.ttt-cell').forEach(c => { c.textContent=''; c.classList.remove('x','o'); }); };
         window.tttClick = (i) => { if(tttBoard[i]!=='' || !tttActive) return; tttBoard[i]=tttPlayer; const c=document.querySelectorAll('.ttt-cell')[i]; if (c) { c.textContent=tttPlayer; c.classList.add(tttPlayer.toLowerCase()); } let won=false; for(let j=0;j<winConds.length;j++){ const [a,b,k]=winConds[j]; if(tttBoard[a]&&tttBoard[a]===tttBoard[b]&&tttBoard[a]===tttBoard[k]){won=true;break;} } const stat = document.getElementById('tttStatus'); if(won){ if (stat) stat.textContent=`שחקן ${tttPlayer} ניצח! 🏆`; tttActive=false; window.rewardPlayer(150,30); window.logGamePlay("Tic-Tac-Toe AI", 150); return; } if(!tttBoard.includes('')){ if (stat) stat.textContent=`תיקו!`; tttActive=false; return; } tttPlayer=tttPlayer==='X'?'O':'X'; if (stat) stat.textContent=`תור שחקן: ${tttPlayer}`; };
 
-        window.resetBubbles = () => { bScore=0; const bScoreEl = document.getElementById('bubblesScore'); if (bScoreEl) bScoreEl.textContent=bScore; bBoard=[]; for(let r=0; r<bRows; r++){ bBoard[r]=[]; for(let c=0; c<bCols; c++){ bBoard[r][c]=bColors[Math.floor(Math.random()*bColors.length)]; } } drawBubblesBoard(); };
-        window.resetBubblesBoardOnly = () => { bBoard=[]; for(let r=0; r<bRows; r++){ bBoard[r]=[]; for(let c=0; c<bCols; c++){ bBoard[r][c]=bColors[Math.floor(Math.random()*bColors.length)]; } } drawBubblesBoard(); };
         function drawBubblesBoard() { if(!bCtx || !bCanvas) return; bCtx.clearRect(0,0,bCanvas.width,bCanvas.height); for(let r=0; r<bRows; r++){ for(let c=0; c<bCols; c++){ if(bBoard[r][c]) { bCtx.beginPath(); bCtx.arc(c*bCellSize+bCellSize/2, r*bCellSize+bCellSize/2, bCellSize/2.5, 0, Math.PI*2); bCtx.fillStyle=bBoard[r][c]; bCtx.fill(); bCtx.beginPath(); bCtx.arc(c*bCellSize+bCellSize/2.5, r*bCellSize+bCellSize/2.5, bCellSize/10, 0, Math.PI*2); bCtx.fillStyle='rgba(255, 255, 255, 0.5)'; bCtx.fill(); } } } }
-        window.useBubblesBomb = () => { if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 }; if (window.userData.inventory.bubbles_bombs > 0) { window.userData.inventory.bubbles_bombs--; bScore += 2000; document.getElementById('bubblesScore').textContent = bScore; window.rewardPlayer(2000, 400); window.showToast("בום! פצצת מגה הופעלה! +2000 נקודות 💥", false); window.resetBubblesBoardOnly(); window.saveUserData(); window.updateUIStats(); window.logGamePlay("Smart Bubbles", bScore); } else { window.showToast("אין לך פצצות! קנה בחנות.", true); } };
-        
+        window.resetBubblesBoardOnly = () => { bBoard=[]; for(let r=0; r<bRows; r++){ bBoard[r]=[]; for(let c=0; c<bCols; c++){ bBoard[r][c]=bColors[Math.floor(Math.random()*bColors.length)]; } } drawBubblesBoard(); };
+
+        window.useBubblesBomb = () => {
+            if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 };
+            if (window.userData.inventory.bubbles_bombs > 0) {
+                window.userData.inventory.bubbles_bombs--;
+                bScore += 2000;
+                document.getElementById('bubblesScore').textContent = bScore;
+                window.rewardPlayer(2000, 400); 
+                window.showToast("בום! פצצת מגה הופעלה! +2000 נקודות 💥", false);
+                window.resetBubblesBoardOnly(); 
+                window.saveUserData();
+                window.updateUIStats();
+                window.logGamePlay("Smart Bubbles", bScore);
+            } else {
+                window.showToast("אין לך פצצות! קנה בחנות.", true);
+            }
+        };
+
+        if(bCanvas){ bCanvas.addEventListener('click', (e) => { const rect=bCanvas.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; const col=Math.floor(x/bCellSize), row=Math.floor(y/bCellSize); if(row>=0&&row<bRows&&col>=0&&col<bCols){ const tg=bBoard[row][col]; if(!tg) return; const m=[]; const v=Array(bRows).fill().map(()=>Array(bCols).fill(false)); function f(r,c){ if(r<0||r>=bRows||c<0||c>=bCols) return; if(v[r][c]||bBoard[r][c]!==tg) return; v[r][c]=true; m.push({r,c}); f(r-1,c); f(r+1,c); f(r,c-1); f(r,c+1); } f(row,col); if(m.length>=2){ m.forEach(p=>{ bBoard[p.r][p.c]=null; }); const sg=m.length*10; bScore+=sg; const bScoreEl = document.getElementById('bubblesScore'); if (bScoreEl) bScoreEl.textContent=bScore; window.showToast(`פוצצת ${m.length} בועות! פלוס ${sg} נקודות!`, false); window.rewardPlayer(sg, Math.floor(sg/5)); window.userQuests.popBubbles.progress += m.length; window.checkQuests(); window.logGamePlay("Smart Bubbles", bScore); for(let c=0;c<bCols;c++){ let er=[]; for(let r=bRows-1;r>=0;r--){ if(bBoard[r][c]===null) er.push(r); else if(er.length>0){ const l=er.shift(); bBoard[l][c]=bBoard[r][c]; bBoard[r][c]=null; er.push(r); } } er.forEach(r=>{ bBoard[r][c]=bColors[Math.floor(Math.random()*bColors.length)]; }); } drawBubblesBoard(); } } }); }
+
         window.startRacingGame = () => { const btnRace = document.getElementById('btnStartRacing'); if (btnRace) btnRace.style.display = 'none'; if (racingInterval) clearInterval(window.racingInterval); racingInterval = setInterval(() => {
             if (!rCtx) return;
             if (window.racingLeft) carX = Math.max(60, carX - 6);
@@ -1255,16 +1024,18 @@
             rCtx.strokeStyle = '#a855f7'; rCtx.lineWidth = 2; rCtx.beginPath(); rCtx.moveTo(160, 120); rCtx.lineTo(30, 320); rCtx.moveTo(160, 120); rCtx.lineTo(290, 320); rCtx.stroke();
             rCtx.strokeStyle = '#22c55e'; rCtx.beginPath(); rCtx.moveTo(160, 120); rCtx.lineTo(10, 320); rCtx.moveTo(160, 120); rCtx.lineTo(310, 320); rCtx.stroke();
             if (Math.random() < 0.05) { obstacles.push({ x: 160, y: 120, size: 2, targetX: Math.random() * 200 + 60, speed: Math.random() * 4 + 3 }); }
-            for (let i = obstacles.length - 1; i >= 0; i--) { let obs = obstacles[i]; obs.y += obs.speed; let progress = (obs.y - 120) / 200; let currentX = 160 + (obs.targetX - 160) * progress; obs.size = 2 + progress * 20; rCtx.fillStyle = '#ef4444'; rCtx.beginPath(); rCtx.moveTo(currentX, obs.y - obs.size); rCtx.lineTo(currentX - obs.size, obs.y + obs.size); rCtx.lineTo(currentX + obs.size, obs.y + obs.size); rCtx.closePath(); rCtx.fill(); if (obs.y >= 270 && obs.y <= 310) { let distance = Math.abs(currentX - carX); if (distance < (obs.size + 15)) { window.showToast("התרסקת! הניקוד שלך: " + racingScore, true); clearInterval(window.racingInterval); const btnRace = document.getElementById('btnStartRacing'); if (btnRace) { btnRace.style.display = 'block'; btnRace.textContent = 'מרוץ חדש'; } window.rewardPlayer(racingScore, Math.floor(racingScore / 4)); window.logGamePlay("Neon Racing 3D", racingScore); } } if (obs.y > 330) { obstacles.splice(i, 1); } }
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i]; obs.y += obs.speed; let progress = (obs.y - 120) / 200; let currentX = 160 + (obs.targetX - 160) * progress; obs.size = 2 + progress * 20;
+                rCtx.fillStyle = '#ef4444'; rCtx.beginPath(); rCtx.moveTo(currentX, obs.y - obs.size); rCtx.lineTo(currentX - obs.size, obs.y + obs.size); rCtx.lineTo(currentX + obs.size, obs.y + obs.size); rCtx.closePath(); rCtx.fill();
+                if (obs.y >= 270 && obs.y <= 310) { let distance = Math.abs(currentX - carX); if (distance < (obs.size + 15)) { window.showToast("התרסקת! הניקוד שלך: " + racingScore, true); clearInterval(window.racingInterval); const btnRace = document.getElementById('btnStartRacing'); if (btnRace) { btnRace.style.display = 'block'; btnRace.textContent = 'מרוץ חדש'; } window.rewardPlayer(racingScore, Math.floor(racingScore / 4)); window.logGamePlay("Neon Racing 3D", racingScore); } }
+                if (obs.y > 330) { obstacles.splice(i, 1); }
+            }
             if(window.userData.activeSkin === 'skin_gold') rCtx.fillStyle = '#eab308'; else if(window.userData.activeSkin === 'skin_fire') rCtx.fillStyle = '#f97316'; else rCtx.fillStyle = '#3b82f6';
             rCtx.shadowColor = '#3b82f6'; rCtx.shadowBlur = 10; rCtx.fillRect(carX - 18, 280, 36, 16); rCtx.fillStyle = '#ec4899'; rCtx.fillRect(carX - 22, 292, 44, 4); rCtx.fillStyle = '#111827'; rCtx.shadowBlur = 0; rCtx.fillRect(carX - 22, 282, 4, 10); rCtx.fillRect(carX + 18, 282, 4, 10);
         }, 30); };
-        window.resetRacing = () => { racingScore = 0; racingSpeed = 0; carX = 160; obstacles = []; const rScore = document.getElementById('racingScore'); const rSpeed = document.getElementById('racingSpeed'); if (rScore) rScore.textContent = racingScore; if (rSpeed) rSpeed.textContent = racingSpeed; const btnRace = document.getElementById('btnStartRacing'); if (btnRace) btnRace.style.display = 'block'; if (rCtx) { rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height); rCtx.fillStyle = '#110c22'; rCtx.fillRect(0, 0, 320, 320); rCtx.fillStyle = '#ec4899'; rCtx.fillRect(0, 120, 320, 4); } };
 
-        // --- Rune Quest 3D ---
         window.resetRune3D = () => { document.getElementById('runeClassSelect').classList.remove('hidden'); document.getElementById('rune3dContainer').style.opacity = '0'; runeScore = 0; document.getElementById('runeScore').textContent = "0 / 3"; window.userQuests.playRune.done = true; window.checkQuests(); };
         window.selectRuneClass = (classType) => { window.userData.rpgStats.class = classType; if (classType === 'warrior') { window.userData.rpgStats.maxHp = 150; window.userData.rpgStats.damage = 25; } if (classType === 'mage') { window.userData.rpgStats.maxHp = 80; window.userData.rpgStats.damage = 45; } if (classType === 'druid') { window.userData.rpgStats.maxHp = 110; window.userData.rpgStats.damage = 30; } window.userData.rpgStats.hp = window.userData.rpgStats.maxHp; window.updateUIStats(); document.getElementById('runeClassSelect').classList.add('hidden'); document.getElementById('rune3dContainer').style.opacity = '1'; initRuneScene(); };
-        window.useRunePotion = () => { if (!window.userData.inventory) window.userData.inventory = { potions: 0, bubbles_bombs: 0 }; if (window.userData.inventory.potions > 0) { if (window.userData.rpgStats.hp >= window.userData.rpgStats.maxHp) { return window.showToast("החיים שלך כבר מלאים!", true); } window.userData.inventory.potions--; window.userData.rpgStats.hp = window.userData.rpgStats.maxHp; window.updateUIStats(); window.showToast("שתית שיקוי! חזרת לחיים מלאים ✨", false); window.saveUserData(); } else { window.showToast("אין לך שיקויים! קנה בחנות.", true); } };
         function initRuneScene() {
             const container = document.getElementById('rune3dContainer');
             if (!runeRenderer && window.THREE) {
@@ -1328,15 +1099,73 @@
             }, 3000);
         };
 
+        window.renderAdminTools = () => {
+            let adminBtn = document.getElementById('adminTestBtn'); window.isManager = false; const user = auth.currentUser;
+            if(user && !user.isAnonymous) {
+                const currentAppId = typeof window.appId !== 'undefined' ? window.appId : appId;
+                getDocs(query(collection(db, "artifacts", currentAppId, "users", user.uid, "user_profiles"))).then(snap => {
+                    snap.forEach(d => { if(d.data().isManager) window.isManager = true; });
+                    if(window.isManager) {
+                        if (!adminBtn) { adminBtn = document.createElement('button'); adminBtn.id = 'adminTestBtn'; adminBtn.className = "fixed bottom-10 right-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.5)] z-[9999] border-2 border-white/20 transition-all flex items-center gap-2"; adminBtn.onclick = window.toggleAdminPlan; document.body.appendChild(adminBtn); }
+                        adminBtn.innerHTML = `<i data-lucide="crown" class="w-5 h-5"></i> אדמין: ${window.currentPlan === 'premium' ? 'Premium (פתוח)' : 'Free (נעול)'}`; adminBtn.style.display = 'flex'; if(window.lucide) lucide.createIcons();
+                    } else if (adminBtn) { adminBtn.style.display = 'none'; }
+                });
+            } else if (adminBtn) { adminBtn.style.display = 'none'; }
+        };
+
+        window.toggleAdminPlan = () => { window.currentPlan = window.currentPlan === 'free' ? 'premium' : 'free'; window.renderAdminTools(); window.showToast(`התוכנית שונתה ל-${window.currentPlan.toUpperCase()}`, false); };
+
+        window.openModal = () => { const authMod = document.getElementById('authModal'); if (authMod) authMod.classList.remove('hidden'); window.showForm('choice'); };
+        window.closeModal = () => { const authMod = document.getElementById('authModal'); if (authMod) authMod.classList.add('hidden'); };
+        window.showForm = (type) => { ['authChoice', 'registerForm', 'loginForm'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }); const targetForm = document.getElementById(type === 'choice' ? 'authChoice' : type === 'register' ? 'registerForm' : 'loginForm'); if (targetForm) targetForm.classList.remove('hidden'); };
+
+        window.submitLogin = async () => {
+            const emailInput = document.getElementById('loginEmail'); const passInput = document.getElementById('loginPassword'); const email = emailInput ? emailInput.value.trim().toLowerCase() : ""; const pass = passInput ? passInput.value : "";
+            if(!email || !pass) return window.showToast("נא להזין אימייל וסיסמה", true);
+            const btn = document.getElementById('loginSubmitBtn'); if(btn) { btn.disabled = true; btn.innerHTML = '<span class="loader"></span> מתחבר...'; }
+            try { await signInWithEmailAndPassword(auth, email, pass); localStorage.setItem('shoval_simulated_logout', 'false'); window.showToast("התחברת בהצלחה ל-Smart Gaming!", false); window.closeModal(); } 
+            catch (e) { window.showToast("אימייל או סיסמה שגויים.", true); } finally { if (btn) { btn.disabled = false; btn.textContent = "כניסה"; } }
+        };
+
+        window.submitRegister = async () => {
+            const nameInput = document.getElementById('regDisplayName'); const emailInput = document.getElementById('regEmail'); const passInput = document.getElementById('regPassword');
+            const name = nameInput ? nameInput.value.trim() : ""; const email = emailInput ? emailInput.value.trim().toLowerCase() : ""; const pass = passInput ? passInput.value : "";
+            if(!name || !email || !pass) return window.showToast("נא למלא את כל השדות", true);
+            const btn = document.getElementById('regSubmitBtn'); if(btn) { btn.disabled = true; btn.innerHTML = '<span class="loader"></span> נרשם...'; }
+            try { const cred = await createUserWithEmailAndPassword(auth, email, pass); const profileRef = doc(collection(db, "artifacts", appId, "users", cred.user.uid, "user_profiles")); await setDoc(profileRef, { id: profileRef.id, displayName: name, isMinor: false, isManager: false, createdAt: new Date().toISOString() }); localStorage.setItem('shoval_simulated_logout', 'false'); window.showToast("חשבון השחקן נוצר בהצלחה!", false); window.closeModal(); } 
+            catch(e) { window.showToast("שגיאה ברישום החשבון", true); } finally { if(btn) { btn.disabled = false; btn.textContent = "צור חשבון"; } }
+        };
+
+        window.handleLogout = async () => { try { await signOut(auth); localStorage.setItem('shoval_simulated_logout', 'true'); window.showToast("התנתקת מחשבון השחקן.", false); } catch (e) { console.error("שגיאה בהתנתקות:", e); } };
+
+        onAuthStateChanged(auth, async (user) => {
+            const isLogout = localStorage.getItem('shoval_simulated_logout') === 'true';
+            const authBtnEl = document.getElementById('authBtn'); const logoutBtnEl = document.getElementById('logoutBtn'); const userNameEl = document.getElementById('navGamerTag');
+
+            if (user && !user.isAnonymous && !isLogout) {
+                if (authBtnEl) authBtnEl.classList.add('hidden'); if (logoutBtnEl) logoutBtnEl.classList.remove('hidden');
+                if (userNameEl) userNameEl.textContent = user.email.split('@')[0];
+                try {
+                    const profilesRef = collection(db, "artifacts", appId, "users", user.uid, "user_profiles"); const snap = await getDocs(query(profilesRef));
+                    let isPremium = false; snap.forEach(d => { if (d.data().beta_tester || d.data().isManager) isPremium = true; });
+                    if (isPremium || localStorage.getItem('smart_plan') === 'premium') window.currentPlan = 'premium';
+                } catch(e) {}
+                window.loadUserData(user); window.renderAdminTools();
+            } else {
+                if (authBtnEl) authBtnEl.classList.remove('hidden'); if (logoutBtnEl) logoutBtnEl.classList.add('hidden');
+                if (userNameEl) userNameEl.textContent = "אורח"; window.currentPlan = 'free'; window.renderAdminTools();
+                if (!user) { try { await signInAnonymously(auth); } catch(e){ console.error(e); } }
+                if (window.updateUIStats) window.updateUIStats();
+            }
+        });
+
         // --- אתחול סופי ---
         window.addEventListener('DOMContentLoaded', () => { 
             setTimeout(() => { const loader = document.getElementById('initialLoader'); if (loader) loader.remove(); }, 2000); 
             
-            // חיבור קנבסים בטוח
             initGameCanvasElements();
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             
-            // חיבור הבועות עם בדיקת קיום אובייקט
             if(bCanvas){ bCanvas.addEventListener('click', (e) => { const rect=bCanvas.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; const col=Math.floor(x/bCellSize), row=Math.floor(y/bCellSize); if(row>=0&&row<bRows&&col>=0&&col<bCols){ const tg=bBoard[row][col]; if(!tg) return; const m=[]; const v=Array(bRows).fill().map(()=>Array(bCols).fill(false)); function f(r,c){ if(r<0||r>=bRows||c<0||c>=bCols) return; if(v[r][c]||bBoard[r][c]!==tg) return; v[r][c]=true; m.push({r,c}); f(r-1,c); f(r+1,c); f(r,c-1); f(r,c+1); } f(row,col); if(m.length>=2){ m.forEach(p=>{ bBoard[p.r][p.c]=null; }); const sg=m.length*10; bScore+=sg; const bScoreEl = document.getElementById('bubblesScore'); if (bScoreEl) bScoreEl.textContent=bScore; window.showToast(`פוצצת ${m.length} בועות! פלוס ${sg} נקודות!`, false); window.rewardPlayer(sg, Math.floor(sg/5)); window.userQuests.popBubbles.progress += m.length; window.checkQuests(); window.logGamePlay("Smart Bubbles", bScore); for(let c=0;c<bCols;c++){ let er=[]; for(let r=bRows-1;r>=0;r--){ if(bBoard[r][c]===null) er.push(r); else if(er.length>0){ const l=er.shift(); bBoard[l][c]=bBoard[r][c]; bBoard[r][c]=null; er.push(r); } } er.forEach(r=>{ bBoard[r][c]=bColors[Math.floor(Math.random()*bColors.length)]; }); } drawBubblesBoard(); } } }); }
             
             window.renderNetflixBanner();
